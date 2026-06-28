@@ -1,0 +1,37 @@
+personalities:
+  TAG:
+    name: "Tight-Aggressive"
+    description: "Selective with hands, plays them aggressively"
+    preflop_range_pct: 15
+    aggression: 0.8
+    bluff_frequency: 0.15
+    fold_to_3bet: 0.4
+
+  LAG:
+    name: "Loose-Aggressive"
+    description: "Wide range, constant pressure"
+    preflop_range_pct: 35
+    aggression: 0.95
+    bluff_frequency: 0.35
+    fold_to_3bet: 0.2
+
+  Nit:
+    name: "Tight-Passive"
+    description: "Only premium hands, rarely bluffs"
+    preflop_range_pct: 8
+    aggression: 0.2
+    bluff_frequency: 0.03
+    fold_to_3bet: 0.7
+
+  CallingStation:
+    name: "Loose-Passive"
+    description: "Plays many hands, calls too much"
+    preflop_range_pct: 50
+    aggression: 0.15
+    bluff_frequency: 0.05
+    fold_to_3bet: 0.1
+
+decision_timing:
+  rule_delay_min_sec: 2
+  rule_delay_max_sec: 5
+  llm_extra_delay_sec: 0

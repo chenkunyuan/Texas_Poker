@@ -1,0 +1,20 @@
+# LLM Provider Configuration
+# provider: anthropic | openai | custom
+provider: anthropic
+model: claude-sonnet-4-6
+api_key: ${ANTHROPIC_API_KEY}
+max_tokens: 500
+temperature: 0.7
+timeout_seconds: 30
+
+# LLM trigger thresholds
+trigger:
+  confidence_threshold: 0.6
+  pot_to_stack_ratio: 0.3
+  enable_on_allin: true
+  enable_on_late_street: true
+
+custom:
+  base_url: null
+  api_key_env: null
+  headers: {}
