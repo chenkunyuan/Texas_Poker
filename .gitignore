@@ -27,3 +27,6 @@ Thumbs.db
 
 # Project
 replays/*.json
+
+# Brainstorm artifacts
+.superpowers/
