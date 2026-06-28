@@ -8,7 +8,7 @@ Every module (engine, AI, WebSocket, replay) imports from here.
 from __future__ import annotations
 
 from enum import Enum
-from typing import List, Optional
+from typing import List, Optional, Literal, Dict
 
 from pydantic import BaseModel, Field
 
@@ -128,11 +128,8 @@ class Card(BaseModel):
         return f"Card(rank={self.rank.value}, suit={self.suit.value})"
 
     def to_dict(self) -> dict:
-        """Return a JSON-serializable dict."""
+        """Return a JSON-serializable dict (used by Replay logger)."""
         return {"rank": self.rank.value, "suit": self.suit.value}
-
-    class Config:
-        use_enum_values = False
 
 
 class PersonalityProfile(BaseModel):
@@ -185,23 +182,23 @@ class Player(BaseModel):
 class BlindsConfig(BaseModel):
     """Blinds configuration for the game."""
 
-    mode: str = "fixed"  # "fixed" or "increasing"
-    small: int = 1
-    big: int = 2
-    increase_interval: Optional[int] = None   # hands between increases (increasing mode)
-    increase_multiplier: Optional[float] = None  # multiplier per increase (increasing mode)
+    mode: Literal["fixed", "increasing"] = "fixed"
+    small: int = 5
+    big: int = 10
+    increase_interval: int = 10     # hands between increases (used when mode="increasing")
+    increase_multiplier: float = 2.0  # multiplier per increase (used when mode="increasing")
 
 
 class GameConfig(BaseModel):
     """Full game configuration submitted before the game starts."""
 
-    variant: str = "no_limit"          # "no_limit" or "pot_limit"
+    variant: Literal["no_limit", "pot_limit"] = "no_limit"
     ai_player_count: int = Field(ge=1, le=8)
-    starting_chips: int = 1000
+    starting_chips: int = Field(default=1000, ge=1)
     blinds: BlindsConfig = Field(default_factory=BlindsConfig)
-    personality_mode: str = "random"    # "random" or "manual"
+    personality_mode: Literal["random", "manual"] = "random"
     manual_personalities: Optional[List[PersonalityProfile]] = None
-    llm_provider: str = "anthropic"     # "anthropic", "openai", or "custom"
+    llm_provider: Literal["anthropic", "openai", "custom"] = "anthropic"
 
 
 class GameState(BaseModel):
@@ -213,7 +210,7 @@ class GameState(BaseModel):
     pot: int = 0
     current_bet: int = 0
     dealer_index: int = 0
-    action_history: List[Action] = Field(default_factory=list)
+    action_history: List[dict] = Field(default_factory=list)
     hand_number: int = 0
     blinds: Optional[BlindsConfig] = None
     config: Optional[GameConfig] = None
@@ -251,7 +248,7 @@ class YourTurnMessage(BaseModel):
     """Server -> Client: Human player's turn to act, with valid actions."""
 
     type: str = "your_turn"
-    valid_actions: List[str] = Field(default_factory=list)
+    valid_actions: Dict[str, dict] = Field(default_factory=dict)
     min_raise: int = 0
     max_raise: int = 0
     call_amount: int = 0
@@ -280,7 +277,7 @@ class HandResultMessage(BaseModel):
 
     type: str = "hand_result"
     winners: List[dict] = Field(default_factory=list)
-    hands: List[dict] = Field(default_factory=list)
+    hands: Dict[str, str] = Field(default_factory=dict)
     pot_distribution: List[dict] = Field(default_factory=list)
 
 
@@ -289,7 +286,7 @@ class GameOverMessage(BaseModel):
 
     type: str = "game_over"
     rankings: List[dict] = Field(default_factory=list)
-    stats: List[dict] = Field(default_factory=list)
+    stats: Dict[str, dict] = Field(default_factory=dict)
     replay_id: Optional[str] = None
 
 
