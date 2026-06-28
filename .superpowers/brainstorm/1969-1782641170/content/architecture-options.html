@@ -1,0 +1,83 @@
+<h2>德州扑克程序 — 架构方案对比</h2>
+<p class="subtitle">Python后端 + HTML/JS前端 的三种架构设计</p>
+
+<div class="options" data-multiselect>
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>模块化单体后端 (推荐)</h3>
+      <p>FastAPI + WebSocket + 原生前端</p>
+      <div class="pros-cons" style="margin-top:0.75rem;">
+        <div class="pros"><h4>优点</h4>
+          <ul>
+            <li>结构清晰，开发效率高</li>
+            <li>WebSocket 实时推送游戏状态</li>
+            <li>Python 生态对 AI/LLM 支持好</li>
+            <li>单进程调试方便</li>
+            <li>模块内部解耦，易于测试</li>
+          </ul>
+        </div>
+        <div class="cons"><h4>缺点</h4>
+          <ul>
+            <li>LLM调用会阻塞事件循环（可用异步缓解）</li>
+            <li>不适合水平扩展</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>事件驱动 + 工作进程</h3>
+      <p>消息队列 + 独立AI Worker + WebSocket网关</p>
+      <div class="pros-cons" style="margin-top:0.75rem;">
+        <div class="pros"><h4>优点</h4>
+          <ul>
+            <li>AI决策不阻塞主服务</li>
+            <li>可独立扩展LLM Worker</li>
+            <li>天然支持Agent隔离</li>
+          </ul>
+        </div>
+        <div class="cons"><h4>缺点</h4>
+          <ul>
+            <li>架构复杂，开发周期长</li>
+            <li>需要消息队列基础设施</li>
+            <li>调试和部署成本高</li>
+            <li>对德州扑克这种回合制游戏过度设计</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>轻量后端 + 富前端</h3>
+      <p>Python仅做LLM代理 + 前端主导游戏逻辑</p>
+      <div class="pros-cons" style="margin-top:0.75rem;">
+        <div class="pros"><h4>优点</h4>
+          <ul>
+            <li>前后端职责分明</li>
+            <li>前端响应快，体验流畅</li>
+          </ul>
+        </div>
+        <div class="cons"><h4>缺点</h4>
+          <ul>
+            <li>游戏核心逻辑在JS中，复杂逻辑难维护</li>
+            <li>规则引擎和AI难以复用</li>
+            <li>前端计算手牌强度等逻辑性能差</li>
+            <li>不利于未来扩展（如服务端复盘、数据分析）</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>推荐方案A的理由</h3>
+  <p>德州扑克是回合制游戏，并发压力小。模块化单体架构在<strong>开发效率、可维护性、可测试性</strong>之间取得最佳平衡。内部模块设计为松耦合，未来如需拆分也可演进。</p>
+</div>

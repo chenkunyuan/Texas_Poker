@@ -1,0 +1,90 @@
+<h2>🤖 AI Agent 系统设计</h2>
+<p class="subtitle">规则引擎 + LLM增强 · 个性差异化 · 数据隔离</p>
+
+<div class="mockup">
+  <div class="mockup-header">决策流程</div>
+  <div class="mockup-body">
+    <div style="font-family:monospace;font-size:12px;color:#ccc;line-height:2;">
+      轮到AI玩家<br/>
+      &nbsp;&nbsp;↓<br/>
+      <span style="color:#4fc3f7;">① 收集公开信息</span> (公共牌、底池、位置、对手行动历史)<br/>
+      &nbsp;&nbsp;↓<br/>
+      <span style="color:#ffb74d;">② 规则引擎计算</span><br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;├─ 起手牌范围评估 (根据位置+个性)<br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;├─ 底池赔率计算<br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;├─ 隐含赔率估算<br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;└─ 输出: {fold/check/call/raise} + 置信度<br/>
+      &nbsp;&nbsp;↓<br/>
+      <span style="color:#888;">决策确定性高?</span> → <span style="color:#66bb6a;">直接返回</span><br/>
+      &nbsp;&nbsp;↓ 否 (边缘决策/大底池/All-in)<br/>
+      <span style="color:#ef5350;">③ LLM增强分析</span><br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;├─ 构造Prompt (含个性+完整牌局上下文)<br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;├─ 调用LLM API<br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;└─ 解析LLM建议 → 覆盖或调整规则引擎输出<br/>
+      &nbsp;&nbsp;↓<br/>
+      <span style="color:#66bb6a;">④ 最终决策 + 模拟延迟</span> → 返回游戏引擎
+    </div>
+  </div>
+</div>
+
+<div class="mockup">
+  <div class="mockup-header">🎭 个性系统</div>
+  <div class="mockup-body">
+    <table style="width:100%;color:#ccc;font-size:12px;border-collapse:collapse;">
+      <tr style="border-bottom:1px solid #333;">
+        <th style="padding:8px;text-align:left;color:#ffb74d;">风格</th>
+        <th style="padding:8px;text-align:left;color:#ffb74d;">起手牌</th>
+        <th style="padding:8px;text-align:left;color:#ffb74d;">激进度</th>
+        <th style="padding:8px;text-align:left;color:#ffb74d;">诈唬频率</th>
+      </tr>
+      <tr style="border-bottom:1px solid #222;">
+        <td style="padding:8px;color:#4fc3f7;">TAG 紧凶</td>
+        <td style="padding:8px;">前15%</td>
+        <td style="padding:8px;">高</td>
+        <td style="padding:8px;">中低</td>
+      </tr>
+      <tr style="border-bottom:1px solid #222;">
+        <td style="padding:8px;color:#ef5350;">LAG 松凶</td>
+        <td style="padding:8px;">前35%</td>
+        <td style="padding:8px;">极高</td>
+        <td style="padding:8px;">高</td>
+      </tr>
+      <tr style="border-bottom:1px solid #222;">
+        <td style="padding:8px;color:#66bb6a;">Nit 紧弱</td>
+        <td style="padding:8px;">前8%</td>
+        <td style="padding:8px;">低</td>
+        <td style="padding:8px;">极低</td>
+      </tr>
+      <tr>
+        <td style="padding:8px;color:#ffb74d;">Station 松弱</td>
+        <td style="padding:8px;">前50%</td>
+        <td style="padding:8px;">低</td>
+        <td style="padding:8px;">低</td>
+      </tr>
+    </table>
+    <p style="color:#888;font-size:11px;margin-top:12px;">个性参数化为可配置文件，开局前随机分配或真人指定</p>
+  </div>
+</div>
+
+<div class="mockup">
+  <div class="mockup-header">🔒 数据隔离约束</div>
+  <div class="mockup-body">
+    <p style="color:#ccc;font-size:13px;">每个AI Agent只能访问<strong style="color:#4fc3f7;">公开信息</strong>：</p>
+    <div style="display:flex;gap:16px;margin-top:8px;">
+      <div style="flex:1;background:#1b5e20;border-radius:6px;padding:10px;">
+        <div style="color:#66bb6a;font-weight:bold;font-size:12px;">✅ 可访问</div>
+        <ul style="color:#aaa;font-size:11px;margin-top:4px;">
+          <li>公共牌</li><li>底池大小</li><li>各玩家筹码量</li>
+          <li>对手公开行动</li><li>当前下注额</li><li>位置信息</li>
+        </ul>
+      </div>
+      <div style="flex:1;background:#b71c1c;border-radius:6px;padding:10px;">
+        <div style="color:#ef5350;font-weight:bold;font-size:12px;">❌ 不可访问</div>
+        <ul style="color:#aaa;font-size:11px;margin-top:4px;">
+          <li>其他玩家底牌</li><li>其他AI内部状态</li>
+          <li>其他AI的LLM对话</li><li>牌堆剩余牌</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>

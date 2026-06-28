@@ -1,0 +1,62 @@
+<h2>🔌 WebSocket通信 &amp; ⚙️ 游戏配置流程</h2>
+<p class="subtitle">实时交互协议 · 开局设置 · 完整一局流程</p>
+
+<div class="mockup">
+  <div class="mockup-header">🔌 WebSocket 消息协议</div>
+  <div class="mockup-body">
+    <div style="display:flex;gap:12px;">
+      <div style="flex:1;">
+        <div style="color:#4fc3f7;font-weight:bold;font-size:12px;margin-bottom:6px;">Server → Client</div>
+        <table style="width:100%;color:#aaa;font-size:11px;border-collapse:collapse;">
+          <tr style="border-bottom:1px solid #222;"><td style="padding:4px 8px;">game_state</td><td style="padding:4px 8px;color:#888;">完整游戏快照</td></tr>
+          <tr style="border-bottom:1px solid #222;"><td style="padding:4px 8px;">player_action</td><td style="padding:4px 8px;color:#888;">某玩家行动通知</td></tr>
+          <tr style="border-bottom:1px solid #222;"><td style="padding:4px 8px;">your_turn</td><td style="padding:4px 8px;color:#888;">轮到真人行动</td></tr>
+          <tr style="border-bottom:1px solid #222;"><td style="padding:4px 8px;">hand_result</td><td style="padding:4px 8px;color:#888;">摊牌结果</td></tr>
+          <tr style="border-bottom:1px solid #222;"><td style="padding:4px 8px;">ai_thinking</td><td style="padding:4px 8px;color:#888;">AI思考中提示</td></tr>
+          <tr><td style="padding:4px 8px;">game_over</td><td style="padding:4px 8px;color:#888;">终局排名</td></tr>
+        </table>
+      </div>
+      <div style="flex:1;">
+        <div style="color:#66bb6a;font-weight:bold;font-size:12px;margin-bottom:6px;">Client → Server</div>
+        <table style="width:100%;color:#aaa;font-size:11px;border-collapse:collapse;">
+          <tr style="border-bottom:1px solid #222;"><td style="padding:4px 8px;">player_action</td><td style="padding:4px 8px;color:#888;">fold/check/call/raise/all-in</td></tr>
+          <tr style="border-bottom:1px solid #222;"><td style="padding:4px 8px;">get_replay</td><td style="padding:4px 8px;color:#888;">请求回放数据</td></tr>
+          <tr style="border-bottom:1px solid #222;"><td style="padding:4px 8px;">new_game</td><td style="padding:4px 8px;color:#888;">开始新游戏(含配置)</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="mockup">
+  <div class="mockup-header">⚙️ 开局配置流程</div>
+  <div class="mockup-body">
+    <div style="font-family:monospace;font-size:12px;color:#ccc;line-height:2;">
+      浏览器打开 → 显示设置面板<br/>
+      &nbsp;&nbsp;├─ <span style="color:#ffb74d;">游戏模式:</span> No-Limit / Pot-Limit<br/>
+      &nbsp;&nbsp;├─ <span style="color:#ffb74d;">AI玩家数:</span> 2~8<br/>
+      &nbsp;&nbsp;├─ <span style="color:#ffb74d;">初始筹码:</span> 每名玩家相同<br/>
+      &nbsp;&nbsp;├─ <span style="color:#ffb74d;">盲注结构:</span> 固定 / 定时增长<br/>
+      &nbsp;&nbsp;├─ <span style="color:#ffb74d;">AI个性:</span> 随机分配 / 手动指定<br/>
+      &nbsp;&nbsp;└─ <span style="color:#ffb74d;">LLM Provider:</span> Anthropic / OpenAI / 自定义<br/>
+      &nbsp;&nbsp;↓<br/>
+      点击"开始游戏" → POST /api/game/start → WebSocket连接建立 → 发牌
+    </div>
+  </div>
+</div>
+
+<div class="mockup">
+  <div class="mockup-header">🎯 真人玩家可选动作</div>
+  <div class="mockup-body">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <span style="background:#b71c1c;color:white;padding:6px 16px;border-radius:16px;font-size:13px;">Fold 弃牌</span>
+      <span style="background:#1b5e20;color:white;padding:6px 16px;border-radius:16px;font-size:13px;">Check 过牌</span>
+      <span style="background:#0d47a1;color:white;padding:6px 16px;border-radius:16px;font-size:13px;">Call 跟注</span>
+      <span style="background:#e65100;color:white;padding:6px 16px;border-radius:16px;font-size:13px;">Raise 加注</span>
+      <span style="background:#4a148c;color:white;padding:6px 16px;border-radius:16px;font-size:13px;">All-in 全押</span>
+    </div>
+    <p style="color:#888;font-size:11px;margin-top:10px;">
+      Raise时显示滑块/输入框设定金额 &nbsp;|&nbsp; 无效动作自动灰化 &nbsp;|&nbsp; 倒计时提示
+    </p>
+  </div>
+</div>
