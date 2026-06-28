@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Texas Hold'em Poker</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div id="app">
+
+        <!-- ============================================================ -->
+        <!-- SETUP VIEW                                                   -->
+        <!-- ============================================================ -->
+        <div id="setup-view" class="view">
+            <div class="setup-container">
+                <h1 class="setup-title">Texas Hold'em <span class="gold">Poker</span></h1>
+                <p class="setup-subtitle">Configure your game</p>
+
+                <div class="setup-columns">
+                    <!-- Left Column -->
+                    <div class="setup-col">
+                        <div class="form-group">
+                            <label>Game Mode</label>
+                            <div class="toggle-group" data-field="variant">
+                                <button class="toggle-btn active" data-value="no_limit">No-Limit</button>
+                                <button class="toggle-btn" data-value="pot_limit">Pot-Limit</button>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>AI Players</label>
+                            <div class="stepper" data-field="ai_player_count">
+                                <button class="stepper-btn" data-action="down">−</button>
+                                <span class="stepper-value">5</span>
+                                <button class="stepper-btn" data-action="up">+</button>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="starting-chips">Starting Chips</label>
+                            <input type="number" id="starting-chips" class="form-input" value="1000" min="100" step="100">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Blinds Mode</label>
+                            <div class="toggle-group" data-field="blinds_mode">
+                                <button class="toggle-btn active" data-value="fixed">Fixed</button>
+                                <button class="toggle-btn" data-value="increasing">Increasing</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column -->
+                    <div class="setup-col">
+                        <div class="form-group blinds-values" id="blinds-fixed-group">
+                            <label>Blind Values</label>
+                            <div class="inline-inputs">
+                                <div class="inline-field">
+                                    <span class="field-label">SB</span>
+                                    <input type="number" id="sb-value" class="form-input small" value="5" min="1">
+                                </div>
+                                <div class="inline-field">
+                                    <span class="field-label">BB</span>
+                                    <input type="number" id="bb-value" class="form-input small" value="10" min="2">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group blinds-values" id="blinds-increasing-group" style="display:none;">
+                            <label>Increasing Blinds</label>
+                            <div class="inline-inputs">
+                                <div class="inline-field">
+                                    <span class="field-label">Init SB</span>
+                                    <input type="number" id="inc-sb" class="form-input small" value="5" min="1">
+                                </div>
+                                <div class="inline-field">
+                                    <span class="field-label">Init BB</span>
+                                    <input type="number" id="inc-bb" class="form-input small" value="10" min="2">
+                                </div>
+                            </div>
+                            <div class="inline-inputs">
+                                <div class="inline-field">
+                                    <span class="field-label">Interval</span>
+                                    <input type="number" id="inc-interval" class="form-input small" value="10" min="1">
+                                </div>
+                                <div class="inline-field">
+                                    <span class="field-label">Mult</span>
+                                    <input type="number" id="inc-multiplier" class="form-input small" value="2.0" min="1.1" step="0.1">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>AI Personality</label>
+                            <div class="toggle-group" data-field="personality_mode">
+                                <button class="toggle-btn active" data-value="random">Random</button>
+                                <button class="toggle-btn" data-value="manual">Manual</button>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="llm-provider">LLM Provider</label>
+                            <select id="llm-provider" class="form-input">
+                                <option value="anthropic">Anthropic (Claude)</option>
+                                <option value="openai">OpenAI (GPT)</option>
+                                <option value="custom">Custom (OpenAI-compatible)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="api-key">API Key</label>
+                            <input type="password" id="api-key" class="form-input" placeholder="Leave blank to use environment variable">
+                        </div>
+                    </div>
+                </div>
+
+                <button id="btn-start-game" class="btn-gold">
+                    <span class="btn-icon">♠</span> Start Game
+                </button>
+                <p id="setup-error" class="error-text" style="display:none;"></p>
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- GAME VIEW                                                    -->
+        <!-- ============================================================ -->
+        <div id="game-view" class="view" style="display:none;">
+            <!-- Top Bar -->
+            <div class="top-bar">
+                <div class="top-bar-left">
+                    <span class="game-title">Texas Hold'em <span class="gold">Poker</span></span>
+                </div>
+                <div class="top-bar-center">
+                    <span class="hand-info">Hand #<span id="hand-number">1</span></span>
+                    <span class="separator">|</span>
+                    <span class="phase-info" id="phase-display">Pre-Flop</span>
+                </div>
+                <div class="top-bar-right">
+                    <span class="blinds-info">Blinds: <span id="blinds-display">5/10</span></span>
+                    <span class="separator">|</span>
+                    <span class="variant-info" id="variant-display">No-Limit</span>
+                </div>
+            </div>
+
+            <!-- Main Game Area -->
+            <div class="game-main">
+                <!-- Left Sidebar -->
+                <div class="sidebar sidebar-left">
+                    <div class="sidebar-section">
+                        <h3 class="sidebar-title">Your Cards</h3>
+                        <div id="your-cards" class="hole-cards-display">
+                            <div class="card-placeholder">?</div>
+                            <div class="card-placeholder">?</div>
+                        </div>
+                    </div>
+                    <div class="sidebar-section">
+                        <h3 class="sidebar-title">Position</h3>
+                        <span id="your-position" class="position-badge">--</span>
+                    </div>
+                    <div class="sidebar-section">
+                        <h3 class="sidebar-title">Chips</h3>
+                        <span id="your-chips" class="chip-count">0</span>
+                    </div>
+                    <div class="sidebar-section">
+                        <h3 class="sidebar-title">Pot</h3>
+                        <span id="pot-display" class="pot-amount">0</span>
+                    </div>
+                    <div class="sidebar-section">
+                        <h3 class="sidebar-title">Current Bet</h3>
+                        <span id="current-bet-display" class="bet-amount">0</span>
+                    </div>
+                </div>
+
+                <!-- Center: Poker Table -->
+                <div class="table-area">
+                    <div id="poker-table" class="poker-table">
+                        <!-- Table Felt -->
+                        <div class="table-felt">
+                            <!-- Community Cards -->
+                            <div id="community-cards" class="community-cards">
+                                <div class="card-slot empty"></div>
+                                <div class="card-slot empty"></div>
+                                <div class="card-slot empty"></div>
+                                <div class="card-slot empty"></div>
+                                <div class="card-slot empty"></div>
+                            </div>
+                            <!-- Pot Label -->
+                            <div id="pot-label" class="pot-label">Pot: 0</div>
+                            <!-- Players positioned around the oval -->
+                            <div id="player-spots" class="player-spots">
+                                <!-- Dynamically filled by JS -->
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Thinking indicator -->
+                    <div id="thinking-indicator" class="thinking-indicator" style="display:none;">
+                        <span class="pulse-dot"></span>
+                        <span id="thinking-text">AI is thinking...</span>
+                    </div>
+                </div>
+
+                <!-- Right Sidebar: Action Log -->
+                <div class="sidebar sidebar-right">
+                    <h3 class="sidebar-title">Action Log</h3>
+                    <div id="action-log" class="action-log">
+                        <div class="log-entry system">Game started. Waiting for first hand...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Action Bar -->
+            <div id="action-bar" class="action-bar">
+                <button id="btn-fold" class="action-btn fold" disabled>
+                    <span class="btn-label">Fold</span>
+                    <span class="btn-shortcut">F</span>
+                </button>
+                <button id="btn-check" class="action-btn check" disabled>
+                    <span class="btn-label">Check</span>
+                    <span class="btn-shortcut">C</span>
+                </button>
+                <button id="btn-call" class="action-btn call" disabled>
+                    <span class="btn-label">Call</span>
+                    <span class="btn-amount" id="call-amount">0</span>
+                    <span class="btn-shortcut">A</span>
+                </button>
+                <div class="raise-group">
+                    <input type="range" id="raise-slider" class="raise-slider" min="0" max="100" value="0" disabled>
+                    <input type="number" id="raise-amount" class="raise-input" value="0" min="0" disabled>
+                    <button id="btn-raise" class="action-btn raise" disabled>
+                        <span class="btn-label">Raise to</span>
+                        <span class="btn-amount" id="raise-display">0</span>
+                        <span class="btn-shortcut">R</span>
+                    </button>
+                </div>
+                <button id="btn-allin" class="action-btn allin" disabled>
+                    <span class="btn-label">All-In</span>
+                    <span class="btn-amount" id="allin-amount">0</span>
+                    <span class="btn-shortcut">I</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- RESULTS VIEW                                                 -->
+        <!-- ============================================================ -->
+        <div id="results-view" class="view" style="display:none;">
+            <div class="results-container">
+                <div class="results-header">
+                    <div class="trophy">🏆</div>
+                    <h1 class="results-title">Game Over</h1>
+                    <p class="results-subtitle">Total Hands: <span id="total-hands">0</span></p>
+                </div>
+
+                <div class="results-columns">
+                    <!-- Rankings -->
+                    <div class="results-panel rankings-panel">
+                        <h2 class="panel-title">Final Rankings</h2>
+                        <div id="rankings-list" class="rankings-list">
+                            <!-- Dynamically filled -->
+                        </div>
+                    </div>
+
+                    <!-- Stats -->
+                    <div class="results-panel stats-panel">
+                        <h2 class="panel-title">Statistics</h2>
+                        <div id="stats-container" class="stats-container">
+                            <!-- Dynamically filled -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="results-actions">
+                    <button id="btn-play-again" class="btn-gold">
+                        <span class="btn-icon">♠</span> Play Again
+                    </button>
+                    <button id="btn-view-replay" class="btn-secondary">
+                        <span class="btn-icon">▶</span> View Replay
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- JavaScript Modules -->
+    <script src="/static/js/ws.js"></script>
+    <script src="/static/js/setup.js"></script>
+    <script src="/static/js/table.js"></script>
+    <script src="/static/js/results.js"></script>
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
