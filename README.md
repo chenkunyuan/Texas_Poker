@@ -50,7 +50,7 @@ Texas_Poker/
 │   └── models/              # Pydantic data models
 ├── frontend/
 │   ├── index.html           # SPA entry
-│   ├── css/style.css        # Dark casino theme
+│   ├── css/                 # Modular setup, game, and results styles
 │   └── js/                  # Client-side modules
 ├── config/                  # YAML configuration
 ├── replays/                 # Saved game replays (JSON)
