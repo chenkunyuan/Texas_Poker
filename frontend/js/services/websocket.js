@@ -12,7 +12,13 @@ export function createWebSocketClient({
     let connectionRequest = null;
 
     const emit = (type, payload = {}) => {
-        (handlers.get(type) || []).forEach((fn) => fn(payload));
+        (handlers.get(type) || []).forEach((fn) => {
+            try {
+                fn(payload);
+            } catch (error) {
+                console.error(`WebSocket handler failed for ${type}.`, error);
+            }
+        });
     };
     const on = (type, fn) => {
         handlers.set(type, [...(handlers.get(type) || []), fn]);
@@ -59,12 +65,14 @@ export function createWebSocketClient({
         };
         candidate.onmessage = (event) => {
             if (!isCurrent()) return;
+            let message;
             try {
-                const message = JSON.parse(event.data);
-                emit(message.type || "_unknown", message);
+                message = JSON.parse(event.data);
             } catch {
                 emit("protocol_error", { message: "Invalid server message." });
+                return;
             }
+            emit(message.type || "_unknown", message);
         };
         candidate.onerror = () => {
             if (isCurrent()) emit("connection", { status: "error" });
