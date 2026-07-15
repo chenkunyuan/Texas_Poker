@@ -89,7 +89,7 @@ body:has(.game-view:not([hidden])){overflow:hidden}
 }
 
 .error-banner {
-    position: absolute;
+    position: fixed;
     z-index: 30;
     top: 62px;
     left: 50%;

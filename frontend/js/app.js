@@ -4,6 +4,7 @@ import { createSoundService } from "./services/sound.js";
 import { createStore } from "./state/store.js";
 import { normalizeGameState } from "./state/game-state.js";
 import { loadPreferences, savePreferences } from "./state/preferences.js";
+import { createTurnSynchronizer } from "./state/turn-sync.js";
 import { createSetupView } from "./setup.js";
 import { createResultsView } from "./results.js";
 import { createTableView } from "./game/table.js";
@@ -20,6 +21,7 @@ const table = createTableView();
 const actions = createActionControls();
 const log = createActionLog();
 const status = createStatusView();
+const turnSync = createTurnSynchronizer();
 let preferences = loadPreferences();
 let currentGameId = null;
 let currentReplayId = null;
@@ -39,6 +41,15 @@ function renderGameMeta(game) {
     const smallBlind = Number(game.small_blind || game.blinds?.small || 0);
     const bigBlind = Number(game.big_blind || game.blinds?.big || 0);
     document.querySelector("#blinds-display").textContent = `${smallBlind} / ${bigBlind}`;
+}
+
+function applyTurn(message) {
+    store.update({ turn: message, pendingAction: false });
+    actions.setTurn(message, store.getState().game);
+    table.hideThinking();
+    log.append({ message: "Your turn! Choose an action." });
+    status.announce("Your turn");
+    sound.play("turn");
 }
 
 sound.setEnabled(preferences.soundEnabled);
@@ -67,6 +78,7 @@ logButton.addEventListener("click", () => {
 });
 
 setup.onStart(async (config) => {
+    turnSync.reset();
     setup.setBusy(true);
     setup.clearError();
     status.clearError();
@@ -80,6 +92,7 @@ setup.onStart(async (config) => {
         actions.disable();
         showView("game");
     } catch (error) {
+        turnSync.reset();
         currentGameId = null;
         socket.close();
         setup.showError(`Failed to start game: ${error.message}`);
@@ -97,27 +110,32 @@ actions.onSubmit((action, amount) => {
 });
 
 socket.on("connection", ({ status: value }) => {
-    store.update({ connection: value });
+    const disconnected = value !== "connected";
+    store.update({
+        connection: value,
+        ...(disconnected ? { turn: null, pendingAction: false } : {}),
+    });
     status.setConnection(value);
-    if (value !== "connected") actions.disable();
+    turnSync.setConnection(value);
+    if (disconnected) {
+        actions.disable();
+    }
 });
 
 socket.on("game_state", (message) => {
     const game = normalizeGameState(message.state);
-    store.update({ game, pendingAction: false });
+    const cachedTurn = turnSync.receiveGameState();
+    store.update({ game, turn: null, pendingAction: false });
     table.render(game);
     renderGameMeta(game);
     actions.setPending(false);
     maxHand = Math.max(maxHand, game.hand_number);
+    if (cachedTurn) applyTurn(cachedTurn);
 });
 
 socket.on("your_turn", (message) => {
-    store.update({ turn: message, pendingAction: false });
-    actions.setTurn(message, store.getState().game);
-    table.hideThinking();
-    log.append({ message: "Your turn! Choose an action." });
-    status.announce("Your turn");
-    sound.play("turn");
+    const actionableTurn = turnSync.receiveTurn(message);
+    if (actionableTurn) applyTurn(actionableTurn);
 });
 
 socket.on("player_action", (message) => {
@@ -154,6 +172,7 @@ results.onPlayAgain(() => {
         resultsTimer = null;
     }
     socket.close();
+    turnSync.reset();
     store.reset();
     log.clear();
     status.clearError();
