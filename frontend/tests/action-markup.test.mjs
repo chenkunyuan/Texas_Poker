@@ -27,3 +27,15 @@ test("the application markup has unique ids and one module entry point", () => {
     assert.equal((index.match(/<script\b/g) || []).length, 1);
     assert.match(index, /<script type="module" src="\/static\/js\/app\.js"><\/script>/);
 });
+
+test("the shared error banner is outside every hidden application view", () => {
+    const bannerPosition = index.indexOf('id="error-banner"');
+    const firstViewPosition = Math.min(
+        index.indexOf('id="setup-view"'),
+        index.indexOf('id="game-view"'),
+        index.indexOf('id="results-view"'),
+    );
+
+    assert.notEqual(bannerPosition, -1);
+    assert.ok(bannerPosition < firstViewPosition);
+});
