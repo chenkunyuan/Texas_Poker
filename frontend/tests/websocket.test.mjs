@@ -24,12 +24,25 @@ class FakeWebSocket {
 
     close() {
         this.readyState = 3;
+        if (!this.deferClose) this.onclose?.();
+    }
+
+    flushClose() {
         this.onclose?.();
     }
 }
 
 function resetSockets() {
     FakeWebSocket.instances = [];
+}
+
+function withTimeout(promise, milliseconds = 50) {
+    return Promise.race([
+        promise,
+        new Promise((resolve, reject) => {
+            setTimeout(() => reject(new Error("Timed out waiting for connection.")), milliseconds);
+        }),
+    ]);
 }
 
 test("websocket client publishes connection states", async () => {
@@ -41,7 +54,7 @@ test("websocket client publishes connection states", async () => {
     const connected = client.connect("ws://example.test/game");
     assert.deepEqual(states, ["connecting"]);
     FakeWebSocket.instances[0].open();
-    await connected;
+    await withTimeout(connected);
 
     assert.equal(client.isConnected(), true);
     assert.deepEqual(states, ["connecting", "connected"]);
@@ -87,4 +100,52 @@ test("manual close cancels a reconnect already scheduled after disconnect", asyn
     await new Promise((resolve) => setTimeout(resolve, 20));
 
     assert.equal(FakeWebSocket.instances.length, 1);
+});
+
+test("the original connect promise resolves after a retry succeeds", async () => {
+    resetSockets();
+    const client = createWebSocketClient({ WebSocketImpl: FakeWebSocket, maxRetries: 1, retryDelay: 1 });
+    const connected = client.connect("ws://example.test/game");
+
+    FakeWebSocket.instances[0].close();
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    FakeWebSocket.instances[1].open();
+
+    await withTimeout(connected);
+    assert.equal(client.isConnected(), true);
+});
+
+test("connect rejects after retries are exhausted", async () => {
+    resetSockets();
+    const client = createWebSocketClient({ WebSocketImpl: FakeWebSocket, maxRetries: 1, retryDelay: 1 });
+    const connected = client.connect("ws://example.test/game");
+
+    FakeWebSocket.instances[0].close();
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    FakeWebSocket.instances[1].close();
+
+    await assert.rejects(withTimeout(connected), /failed after 2 attempts/i);
+});
+
+test("a stale close cannot replace a newer connection", async () => {
+    resetSockets();
+    const client = createWebSocketClient({ WebSocketImpl: FakeWebSocket, retryDelay: 1 });
+    const firstConnection = client.connect("ws://example.test/first");
+    const oldSocket = FakeWebSocket.instances[0];
+    oldSocket.open();
+    await firstConnection;
+
+    oldSocket.deferClose = true;
+    client.close();
+    const secondConnection = client.connect("ws://example.test/second");
+    const newSocket = FakeWebSocket.instances[1];
+    newSocket.open();
+    await secondConnection;
+    oldSocket.flushClose();
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    assert.equal(FakeWebSocket.instances.length, 2);
+    assert.equal(client.isConnected(), true);
+    assert.equal(client.send({ type: "current" }), true);
+    assert.deepEqual(newSocket.sent, [JSON.stringify({ type: "current" })]);
 });
