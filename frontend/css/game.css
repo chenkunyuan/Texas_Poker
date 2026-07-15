@@ -75,6 +75,19 @@ body:has(.game-view:not([hidden])){overflow:hidden}
     color: var(--success);
 }
 
+#connection-status[data-status="connecting"],
+#connection-status[data-status="reconnecting"] {
+    color: var(--gold-soft);
+}
+
+#connection-status[data-status="disconnected"] {
+    color: var(--muted);
+}
+
+#connection-status[data-status="error"] {
+    color: var(--danger);
+}
+
 .error-banner {
     position: absolute;
     z-index: 30;
@@ -362,6 +375,10 @@ body:has(.game-view:not([hidden])){overflow:hidden}
     justify-content: space-between;
     padding-bottom: 5px;
     border-bottom: 1px solid rgba(202, 166, 96, .14);
+}
+
+.action-log-panel.is-collapsed #action-log {
+    display: none;
 }
 
 .action-log-panel button {
