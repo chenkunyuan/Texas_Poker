@@ -153,7 +153,9 @@ body:has(.game-view:not([hidden])){overflow:hidden}
     gap: clamp(4px, .5vw, 8px);
 }
 
-.playing-card {
+.playing-card,
+.card,
+.card-slot {
     width: clamp(36px, 4vw, 57px);
     aspect-ratio: .72;
     display: grid;
@@ -167,13 +169,33 @@ body:has(.game-view:not([hidden])){overflow:hidden}
     font: 700 clamp(13px, 1.4vw, 20px)/.95 var(--font-display);
 }
 
-.playing-card i {
+.playing-card i,
+.card-suit {
     font-size: .82em;
     font-style: normal;
 }
 
-.playing-card.suit-red {
+.playing-card.suit-red,
+.card.suit-red {
     color: var(--red-suit);
+}
+
+.card.suit-black {
+    color: var(--card-ink);
+}
+
+.card.face-down {
+    border-color: rgba(223, 191, 122, .48);
+    background:
+        repeating-linear-gradient(45deg, rgba(223, 191, 122, .18) 0 2px, transparent 2px 6px),
+        linear-gradient(145deg, #183f36, #09251f);
+    box-shadow: inset 0 0 0 3px #0d3028, 0 6px 12px rgba(0, 0, 0, .34);
+}
+
+.card-slot.empty {
+    border: 1px dashed rgba(223, 191, 122, .34);
+    background: rgba(2, 18, 15, .2);
+    box-shadow: inset 0 0 12px rgba(0, 0, 0, .14);
 }
 
 .player-seat {
@@ -187,6 +209,10 @@ body:has(.game-view:not([hidden])){overflow:hidden}
     background: linear-gradient(145deg, rgba(8, 28, 24, .98), rgba(4, 17, 15, .98));
     box-shadow: 0 8px 18px rgba(0, 0, 0, .38);
     font-size: clamp(9px, .9vw, 12px);
+}
+
+#player-spots .player-seat[style] {
+    transform: translate(-50%, -50%);
 }
 
 .player-seat strong,
@@ -306,7 +332,9 @@ body:has(.game-view:not([hidden])){overflow:hidden}
     gap: 3px;
 }
 
-.hole-cards .playing-card {
+.hole-cards .playing-card,
+.hole-cards .card,
+.hole-cards .card-slot {
     width: 32px;
     border-radius: 4px;
     font-size: 12px;
@@ -375,6 +403,17 @@ body:has(.game-view:not([hidden])){overflow:hidden}
     background: var(--surface-glass);
     color: var(--muted);
     font-size: 11px;
+}
+
+.thinking-indicator::before {
+    content: "";
+    display: inline-block;
+    width: .55em;
+    aspect-ratio: 1;
+    margin-right: 7px;
+    border-radius: 50%;
+    background: var(--gold);
+    box-shadow: 0 0 0 3px rgba(214, 174, 99, .12);
 }
 
 .thinking-indicator[hidden] {
