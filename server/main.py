@@ -198,9 +198,11 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str) -> None:
         # A reconnect may happen while the game loop is waiting for the
         # human. Replay an isolated snapshot after the fresh state so the
         # client can restore the same legal controls.
-        pending_turn = controller.pending_human_turn
-        if pending_turn is not None:
-            await websocket.send_json({"type": "your_turn", **pending_turn})
+        await controller.replay_pending_human_turn(
+            lambda pending_turn: websocket.send_json(
+                {"type": "your_turn", **pending_turn}
+            )
+        )
 
     try:
         while True:
@@ -215,7 +217,7 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str) -> None:
                 amount = message.get("amount", 0)
 
                 if controller is not None:
-                    controller.submit_human_action(action, amount)
+                    await controller.submit_human_action(action, amount)
                 else:
                     logger.warning(
                         "Received player_action for unknown game '%s'.", game_id
