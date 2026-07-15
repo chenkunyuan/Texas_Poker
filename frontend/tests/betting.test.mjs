@@ -11,5 +11,6 @@ test("getBetPreset rounds the pot fraction and clamps it", () => {
 test("validateRaise explains invalid targets", () => {
     assert.equal(validateRaise(79, 80, 900), "Minimum raise is 80.");
     assert.equal(validateRaise(901, 80, 900), "Maximum raise is 900.");
+    assert.equal(validateRaise(320.5, 80, 900), "Enter a whole-chip raise amount.");
     assert.equal(validateRaise(320, 80, 900), null);
 });

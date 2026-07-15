@@ -2,10 +2,15 @@ export function createSoundService(
     AudioContextImpl = globalThis.AudioContext || globalThis.webkitAudioContext,
 ) {
     let enabled = false;
+    let context = null;
 
     return {
         setEnabled(value) {
             enabled = Boolean(value);
+            if (!enabled && context) {
+                context.close?.();
+                context = null;
+            }
         },
         isEnabled() {
             return enabled;
@@ -13,7 +18,8 @@ export function createSoundService(
         play(kind) {
             if (!enabled || !AudioContextImpl) return;
 
-            const context = new AudioContextImpl();
+            if (!context || context.state === "closed") context = new AudioContextImpl();
+            if (context.state === "suspended") context.resume?.();
             const oscillator = context.createOscillator();
             const gain = context.createGain();
             const duration = 0.12;

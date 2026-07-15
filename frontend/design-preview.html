@@ -100,18 +100,31 @@
             </main>
 
             <footer id="action-bar" class="action-dock" aria-label="Poker actions">
-                <button class="action-button action-fold" type="button">Fold <kbd>F</kbd></button>
-                <button class="action-button" type="button">Check <kbd>C</kbd></button>
-                <button class="action-button" type="button">Call 160 <kbd>A</kbd></button>
+                <button id="btn-fold" class="action-button action-fold" data-action="FOLD" type="button" disabled>
+                    Fold <kbd>F</kbd>
+                </button>
+                <button id="btn-check" class="action-button" data-action="CHECK" type="button" disabled>
+                    Check <kbd>C</kbd>
+                </button>
+                <button id="btn-call" class="action-button" data-action="CALL" type="button" disabled>
+                    Call <span id="call-amount">0</span> <kbd>A</kbd>
+                </button>
                 <div class="raise-controls">
-                    <label class="sr-only" for="preview-raise-amount">Raise amount</label>
-                    <input id="preview-raise-amount" type="number" value="320">
-                    <button class="preset-button" type="button">½ pot</button>
-                    <button class="preset-button" type="button">¾ pot</button>
-                    <button class="preset-button" type="button">Pot</button>
-                    <button class="action-button action-primary" type="button">Raise <kbd>R</kbd></button>
+                    <div class="raise-field">
+                        <label class="sr-only" for="raise-amount">Raise amount</label>
+                        <input id="raise-amount" type="number" inputmode="numeric" step="1" aria-describedby="raise-error" disabled>
+                        <p id="raise-error" class="raise-error" role="alert" hidden></p>
+                    </div>
+                    <button class="preset-button" data-fraction="0.5" type="button" disabled>1/2 pot</button>
+                    <button class="preset-button" data-fraction="0.75" type="button" disabled>3/4 pot</button>
+                    <button class="preset-button" data-fraction="1" type="button" disabled>Pot</button>
+                    <button id="btn-raise" class="action-button action-primary" data-action="RAISE" type="button" disabled>
+                        Raise <kbd>R</kbd>
+                    </button>
                 </div>
-                <button class="action-button action-all-in" type="button">All-in <kbd>I</kbd></button>
+                <button id="btn-allin" class="action-button action-all-in" data-action="ALL_IN" type="button" disabled>
+                    All-in <span id="allin-amount">0</span> <kbd>I</kbd>
+                </button>
             </footer>
 
             <div id="live-announcer" class="sr-only" aria-live="assertive"></div>

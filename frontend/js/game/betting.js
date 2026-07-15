@@ -5,6 +5,7 @@ export function getBetPreset(fraction, pot, minRaise, maxRaise) {
 
 export function validateRaise(amount, minRaise, maxRaise) {
     if (!Number.isFinite(amount)) return "Enter a valid raise amount.";
+    if (!Number.isInteger(amount)) return "Enter a whole-chip raise amount.";
     if (amount < minRaise) return `Minimum raise is ${minRaise}.`;
     if (amount > maxRaise) return `Maximum raise is ${maxRaise}.`;
     return null;

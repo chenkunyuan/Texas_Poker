@@ -148,6 +148,22 @@ test("raise presets clamp pot fractions and invalid raises stay inline", () => {
     assert.deepEqual(submitted, [["RAISE", 320]]);
 });
 
+test("fractional raises are rejected without submitting", () => {
+    const { root, controls } = createHarness();
+    const submitted = [];
+    controls.onSubmit((...args) => submitted.push(args));
+    controls.setTurn(turn, gameState);
+
+    const input = root.elements.get("raise-amount");
+    input.value = "320.5";
+    input.dispatch("input");
+    root.actions.get("RAISE").click();
+
+    assert.equal(root.elements.get("raise-error").textContent, "Enter a whole-chip raise amount.");
+    assert.equal(root.elements.get("raise-error").hidden, false);
+    assert.deepEqual(submitted, []);
+});
+
 test("F/C/A/R/I shortcuts submit enabled actions with the correct amount", () => {
     const cases = [
         ["f", "FOLD", 0],
@@ -180,4 +196,21 @@ test("shortcuts ignore form focus and disabled actions", () => {
     assert.equal(root.keydown("f", root.elements.get("raise-amount")), false);
     assert.equal(root.keydown("c"), false);
     assert.deepEqual(submitted, []);
+});
+
+test("shortcuts ignore control, command, and alt key combinations", () => {
+    for (const modifiers of [{ ctrlKey: true }, { metaKey: true }, { altKey: true }]) {
+        const { root, controls } = createHarness();
+        const submitted = [];
+        controls.onSubmit((...args) => submitted.push(args));
+        controls.setTurn({ ...turn, valid_actions: { ...turn.valid_actions, CHECK: {} } }, gameState);
+
+        root.dispatch("keydown", {
+            key: modifiers.metaKey ? "r" : "a",
+            target: new FakeElement({ tagName: "DIV" }),
+            preventDefault() {},
+            ...modifiers,
+        });
+        assert.deepEqual(submitted, []);
+    }
 });
