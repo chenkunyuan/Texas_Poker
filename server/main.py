@@ -16,6 +16,7 @@ from typing import Any
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from dotenv import load_dotenv
 
 from server.config import load_llm_config, load_personalities
 from server.engine.game_controller import GameController
@@ -49,6 +50,7 @@ _active_replays: dict[str, ReplayLogger] = {}
 
 # Project root for serving frontend files
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
+load_dotenv(_PROJECT_ROOT / ".env")
 _FRONTEND_DIR = _PROJECT_ROOT / "frontend"
 
 # ---------------------------------------------------------------------------

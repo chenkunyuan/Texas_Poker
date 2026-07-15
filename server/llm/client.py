@@ -1,10 +1,10 @@
 """
-LLM Client base classes and factory for Texas Hold'em Poker AI.
+OpenAI client base classes and factory for Texas Hold'em Poker AI.
 
 Provides:
 - LLMDecision dataclass for structured LLM responses.
 - LLMClient ABC for LLM provider adapters.
-- LLMClientFactory to instantiate the correct adapter from YAML config.
+- LLMClientFactory to instantiate the OpenAI adapter from YAML config.
 """
 
 from __future__ import annotations
@@ -133,8 +133,7 @@ def _extract_json_from_response(text: str) -> Optional[dict]:
 
 
 class LLMClientFactory:
-    """Factory that reads ``config/llm_config.yaml`` and returns the
-    appropriate :class:`LLMClient` adapter."""
+    """Create the OpenAI client configured in ``config/llm_config.yaml``."""
 
     @staticmethod
     def create(config_path: Optional[str] = None) -> Optional[LLMClient]:
@@ -145,8 +144,8 @@ class LLMClientFactory:
                 ``<project_root>/config/llm_config.yaml``.
 
         Returns:
-            An :class:`LLMClient` instance, or ``None`` if no provider is
-            configured or the config file cannot be read.
+            An OpenAI :class:`LLMClient`, or ``None`` when configuration is
+            unreadable or ``OPENAI_API_KEY`` is unavailable.
         """
         if config_path is None:
             config_path = str(
@@ -161,21 +160,11 @@ class LLMClientFactory:
         except Exception:
             return None
 
-        provider = config.get("provider", "").lower()
+        api_key = _envsubst(config.get("api_key", "")) or ""
+        if not api_key.strip():
+            return None
 
-        if provider == "anthropic":
-            from server.llm.claude_adapter import ClaudeAdapter
+        from server.llm.openai_adapter import OpenAIAdapter
 
-            return ClaudeAdapter(config)
-
-        elif provider == "openai":
-            from server.llm.openai_adapter import OpenAIAdapter
-
-            return OpenAIAdapter(config)
-
-        elif provider == "custom":
-            from server.llm.custom_adapter import CustomAdapter
-
-            return CustomAdapter(config)
-
-        return None
+        config["api_key"] = api_key
+        return OpenAIAdapter(config)
