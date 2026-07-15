@@ -1,4 +1,7 @@
-.setup-view {
+#setup-view {
+    display: flex;
+    align-items: safe center;
+    justify-content: center;
     min-height: 100vh;
     height: 100vh;
     overflow-y: auto;
@@ -76,7 +79,7 @@
 .form-input:focus-visible,
 .toggle-btn:focus-visible,
 .stepper-btn:focus-visible,
-.setup-view .btn-gold:focus-visible {
+#setup-view .btn-gold:focus-visible {
     outline: 2px solid var(--gold);
     outline-offset: 3px;
 }
@@ -108,25 +111,25 @@
     font-weight: 700;
 }
 
-.setup-view .btn-gold,
-.setup-view .btn-secondary {
+#setup-view .btn-gold,
+#setup-view .btn-secondary {
     min-height: 44px;
     padding: 0 22px;
     border-radius: 9px;
     font-weight: 700;
 }
 
-.setup-view .btn-gold {
+#setup-view .btn-gold {
     background: linear-gradient(180deg, #dcc080, #a67a38);
     color: #17130d;
     box-shadow: 0 8px 22px rgba(0, 0, 0, .28);
 }
 
-.setup-view .btn-gold:not(:disabled):hover {
+#setup-view .btn-gold:not(:disabled):hover {
     background: linear-gradient(180deg, #ead49e, #b98a45);
 }
 
-.setup-view .btn-secondary {
+#setup-view .btn-secondary {
     border: 1px solid var(--line);
     background: transparent;
     color: var(--gold-soft);
