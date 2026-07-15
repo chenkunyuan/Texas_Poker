@@ -97,11 +97,39 @@ test("action log renders player, result, and system text without interpreting ma
     log.append({ message: "<script>alert(1)</script>" });
 
     assert.deepEqual(list.children.map((entry) => entry.textContent), [
-        "<img src=x> raise 1,200",
+        "<img src=x> raise to 1,200",
         "Winner: <b>Alice</b>",
         "<script>alert(1)</script>",
     ]);
     assert.deepEqual(list.children.map((entry) => entry.children.length), [0, 0, 0]);
+});
+
+test("action log maps raises and all-ins to natural poker labels with amounts", () => {
+    const { log, list } = createLogHarness();
+
+    log.append({ type: "player_action", player_name: "Alice", action: "RAISE", amount: 1200 });
+    log.append({ type: "player_action", player_name: "Bob", action: "ALL_IN", amount: 875 });
+    log.append({ type: "player_action", player_name: "Casey", action: "MYSTERY_MOVE", amount: 25 });
+
+    assert.deepEqual(list.children.map((entry) => entry.textContent), [
+        "Alice raise to 1,200",
+        "Bob all-in 875",
+        "Casey mystery move 25",
+    ]);
+});
+
+test("hand results distinguish one, multiple, and no winners", () => {
+    const { log, list } = createLogHarness();
+
+    log.append({ type: "hand_result", winners: [{ player_name: "Alice" }] });
+    log.append({ type: "hand_result", winners: [{ player_name: "Alice" }, { player_id: "bot-2" }] });
+    log.append({ type: "hand_result", winners: [] });
+
+    assert.deepEqual(list.children.map((entry) => entry.textContent), [
+        "Winner: Alice",
+        "Winners: Alice, bot-2",
+        "No winner",
+    ]);
 });
 
 test("action log retains only the latest 100 entries", () => {
