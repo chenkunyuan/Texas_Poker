@@ -8,6 +8,7 @@ export function createWebSocketClient({
     let url = "";
     let manualClose = false;
     let attempts = 0;
+    let reconnectTimer = null;
 
     const emit = (type, payload = {}) => {
         (handlers.get(type) || []).forEach((fn) => fn(payload));
@@ -43,7 +44,10 @@ export function createWebSocketClient({
             emit("connection", { status: "disconnected" });
             if (!manualClose && attempts < maxRetries) {
                 attempts += 1;
-                setTimeout(() => connect(url).catch(() => {}), retryDelay);
+                reconnectTimer = setTimeout(() => {
+                    reconnectTimer = null;
+                    if (!manualClose) connect(url).catch(() => {});
+                }, retryDelay);
             }
         };
     });
@@ -58,6 +62,10 @@ export function createWebSocketClient({
         },
         close() {
             manualClose = true;
+            if (reconnectTimer !== null) {
+                clearTimeout(reconnectTimer);
+                reconnectTimer = null;
+            }
             socket?.close();
             socket = null;
         },
