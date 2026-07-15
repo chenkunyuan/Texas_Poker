@@ -420,11 +420,16 @@ Texas_Poker/
 ├── frontend/
 │   ├── index.html              # Main page
 │   ├── css/
-│   │   └── style.css
+│   │   ├── tokens.css          # Shared design tokens
+│   │   ├── base.css            # Global reset and accessibility styles
+│   │   ├── setup.css           # Setup view
+│   │   ├── game.css            # Table and action dock
+│   │   └── results.css         # Results view
 │   ├── js/
-│   │   ├── game.js             # Main game client logic
-│   │   ├── ws.js               # WebSocket client
-│   │   ├── table.js            # Table rendering
+│   │   ├── app.js              # Application controller
+│   │   ├── game/               # Table, actions, status, and log views
+│   │   ├── services/           # HTTP, WebSocket, and sound services
+│   │   ├── state/              # Store, preferences, and state helpers
 │   │   └── setup.js            # Pre-game setup UI
 │   └── assets/
 │       └── cards/              # Card images (SVG or PNG)
