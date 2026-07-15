@@ -128,15 +128,8 @@ def build_poker_prompt(
     lines.append("Consider your hole cards, the community cards, position, pot odds,")
     lines.append("your chip stack, your playing style, and the action history.")
     lines.append("")
-    lines.append("Respond with a **single JSON object** in this exact format:")
-    lines.append("```json")
-    lines.append("{")
-    lines.append('    "action": "FOLD|CHECK|CALL|RAISE|ALL_IN",')
-    lines.append('    "amount": <integer, 0 for FOLD/CHECK/CALL>,')
-    lines.append('    "reasoning": "<brief poker reasoning>",')
-    lines.append('    "confidence": <float between 0.0 and 1.0>')
-    lines.append("}")
-    lines.append("```")
+    lines.append("Choose the strongest legal action for this situation.")
+    lines.append("Keep the reasoning brief and base it only on the information above.")
 
     return "\n".join(lines)
 

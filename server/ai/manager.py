@@ -157,10 +157,11 @@ class AIManager:
                 action = llm_action
                 amount = llm_amount
                 decision_source = "LLM"
-            except Exception:
-                logger.exception(
-                    "LLM decision failed for player %s; falling back to rule engine.",
+            except Exception as exc:
+                logger.warning(
+                    "LLM decision unavailable for player %s: %s; using rule engine.",
                     player.id,
+                    type(exc).__name__,
                 )
                 # Fall back to rule-engine decision (already set above)
 
