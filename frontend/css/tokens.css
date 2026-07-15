@@ -1,0 +1,16 @@
+:root { --bg:#020d0b; --surface:#071b17; --felt:#10513c; --felt-dark:#092f25; --wood:#3a2116; --gold:#caa660; --gold-soft:#dcc080; --text:#f1e6cc; --muted:#98afa7; --danger:#d89a91; --line:rgba(202,166,96,.24); --radius:12px; --shadow:0 18px 44px rgba(0,0,0,.42); --fast:140ms; }
+
+:root {
+    --surface-raised: #0b2420;
+    --surface-glass: rgba(3, 18, 15, .92);
+    --success: #73d2a2;
+    --card: #f2ead9;
+    --card-ink: #192722;
+    --red-suit: #a12d35;
+    --font-display: Georgia, "Times New Roman", serif;
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 22px;
+}

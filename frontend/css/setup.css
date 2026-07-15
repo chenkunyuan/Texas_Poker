@@ -1,0 +1,109 @@
+.setup-view {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: clamp(24px, 5vw, 72px);
+    background:
+        radial-gradient(circle at 50% 8%, rgba(22, 77, 59, .72), transparent 38%),
+        var(--bg);
+}
+
+.setup-container {
+    width: min(760px, 100%);
+    padding: clamp(28px, 4vw, 52px);
+    border: 1px solid var(--line);
+    border-radius: calc(var(--radius) * 1.5);
+    background: linear-gradient(145deg, rgba(11, 36, 32, .98), rgba(3, 17, 14, .98));
+    box-shadow: var(--shadow);
+}
+
+.setup-title {
+    margin-bottom: 4px;
+    color: var(--gold-soft);
+    font: 500 clamp(28px, 4vw, 44px)/1.1 var(--font-display);
+    letter-spacing: .03em;
+}
+
+.setup-subtitle,
+.form-group label,
+.field-label {
+    color: var(--muted);
+}
+
+.setup-columns {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px 28px;
+    margin: 30px 0;
+}
+
+.form-group {
+    margin-bottom: 18px;
+}
+
+.form-group > label {
+    display: block;
+    margin-bottom: 7px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.form-input,
+.toggle-btn,
+.stepper-btn {
+    min-height: 40px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text);
+}
+
+.form-input {
+    width: 100%;
+    padding: 8px 11px;
+}
+
+.toggle-group,
+.stepper,
+.inline-inputs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.toggle-btn,
+.stepper-btn {
+    padding: 7px 12px;
+}
+
+.toggle-btn.active {
+    border-color: var(--gold);
+    color: var(--gold-soft);
+    background: rgba(202, 166, 96, .12);
+}
+
+.btn-gold,
+.btn-secondary {
+    min-height: 44px;
+    padding: 0 22px;
+    border-radius: 9px;
+    font-weight: 700;
+}
+
+.btn-gold {
+    background: linear-gradient(180deg, #d2ad68, #a67a38);
+    color: #17130d;
+}
+
+.btn-secondary {
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--gold-soft);
+}
+
+.error-text {
+    margin: 10px 0 0;
+    color: var(--danger);
+}
