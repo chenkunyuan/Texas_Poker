@@ -94,6 +94,7 @@ export function createActionControls(root = document) {
     input.addEventListener("input", showRaiseError);
 
     keyTarget.addEventListener("keydown", (event) => {
+        if (event.ctrlKey || event.metaKey || event.altKey) return;
         if (FORM_TAGS.has(String(event.target?.tagName || "").toUpperCase())) return;
         const action = SHORTCUTS[String(event.key || "").toUpperCase()];
         if (!action || buttons[action].disabled) return;
