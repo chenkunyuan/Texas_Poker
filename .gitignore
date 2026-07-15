@@ -30,3 +30,6 @@ replays/*.json
 
 # Brainstorm artifacts
 .superpowers/
+
+# Local Git worktrees
+.worktrees/
