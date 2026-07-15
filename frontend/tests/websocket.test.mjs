@@ -74,3 +74,17 @@ test("manual close does not reconnect", async () => {
     assert.equal(client.isConnected(), false);
     assert.equal(FakeWebSocket.instances.length, 1);
 });
+
+test("manual close cancels a reconnect already scheduled after disconnect", async () => {
+    resetSockets();
+    const client = createWebSocketClient({ WebSocketImpl: FakeWebSocket, retryDelay: 5 });
+    const connected = client.connect("ws://example.test/game");
+    FakeWebSocket.instances[0].open();
+    await connected;
+
+    FakeWebSocket.instances[0].close();
+    client.close();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    assert.equal(FakeWebSocket.instances.length, 1);
+});
