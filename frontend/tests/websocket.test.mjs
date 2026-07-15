@@ -163,3 +163,51 @@ test("closing from a connecting handler does not create a ghost socket", async (
     assert.equal(FakeWebSocket.instances.length, 0);
     assert.equal(client.isConnected(), false);
 });
+
+test("a throwing connection handler does not block connection or later handlers", async () => {
+    resetSockets();
+    const client = createWebSocketClient({ WebSocketImpl: FakeWebSocket });
+    let laterHandlerCalls = 0;
+    client.on("connection", ({ status }) => {
+        if (status === "connected") throw new Error("handler failed");
+    });
+    client.on("connection", ({ status }) => {
+        if (status === "connected") laterHandlerCalls += 1;
+    });
+    const originalConsoleError = console.error;
+    console.error = () => {};
+    try {
+        const connected = client.connect("ws://example.test/game");
+        assert.doesNotThrow(() => FakeWebSocket.instances[0].open());
+        await withTimeout(connected);
+    } finally {
+        console.error = originalConsoleError;
+    }
+
+    assert.equal(laterHandlerCalls, 1);
+    assert.equal(client.isConnected(), true);
+});
+
+test("a throwing message handler does not become a protocol error or block peers", async () => {
+    resetSockets();
+    const client = createWebSocketClient({ WebSocketImpl: FakeWebSocket });
+    let laterHandlerCalls = 0;
+    let protocolErrors = 0;
+    client.on("game_state", () => { throw new Error("handler failed"); });
+    client.on("game_state", () => { laterHandlerCalls += 1; });
+    client.on("protocol_error", () => { protocolErrors += 1; });
+    const connected = client.connect("ws://example.test/game");
+    FakeWebSocket.instances[0].open();
+    await connected;
+
+    const originalConsoleError = console.error;
+    console.error = () => {};
+    try {
+        FakeWebSocket.instances[0].onmessage({ data: JSON.stringify({ type: "game_state" }) });
+    } finally {
+        console.error = originalConsoleError;
+    }
+
+    assert.equal(laterHandlerCalls, 1);
+    assert.equal(protocolErrors, 0);
+});
