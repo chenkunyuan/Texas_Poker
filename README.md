@@ -10,6 +10,16 @@ Browser-based Texas Hold'em poker game — 1 human player vs N AI agents with LL
 - **Real-time gameplay** — WebSocket-powered, dark casino theme
 - **Replay system** — Full hand history recording with statistics (VPIP / PFR / AF)
 
+## Screenshots
+
+### Poker Table
+
+![Active Texas Hold'em poker table](docs/images/game-table.png)
+
+| Game Setup | Game Results |
+| --- | --- |
+| ![Texas Hold'em game setup](docs/images/game-setup.png) | ![Texas Hold'em game results](docs/images/game-results.png) |
+
 ## Quick Start
 
 Create the local secret file with the command for your shell:
