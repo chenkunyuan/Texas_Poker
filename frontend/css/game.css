@@ -449,6 +449,13 @@ body:has(.game-view:not([hidden])){overflow:hidden}
     transform: translateY(-1px);
 }
 
+.action-button:disabled,
+.preset-button:disabled,
+.raise-controls input:disabled {
+    cursor: not-allowed;
+    opacity: .42;
+}
+
 .action-button kbd {
     margin-left: 4px;
     padding: 1px 4px;
@@ -490,12 +497,36 @@ body:has(.game-view:not([hidden])){overflow:hidden}
     border-left: 1px solid var(--line);
 }
 
+.raise-field {
+    position: relative;
+}
+
 .raise-controls input {
     width: 82px;
     height: 36px;
     padding: 0 9px;
     background: var(--surface);
     color: var(--text);
+}
+
+.raise-error {
+    position: absolute;
+    right: 0;
+    bottom: calc(100% + 7px);
+    width: max-content;
+    max-width: 220px;
+    margin: 0;
+    padding: 5px 8px;
+    border: 1px solid rgba(216, 154, 145, .45);
+    border-radius: 6px;
+    background: #321d1a;
+    color: #f0c2ba;
+    font-size: 10px;
+    box-shadow: 0 7px 18px rgba(0, 0, 0, .3);
+}
+
+.raise-error[hidden] {
+    display: none;
 }
 
 .preset-button {
