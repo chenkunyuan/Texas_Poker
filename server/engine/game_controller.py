@@ -11,7 +11,7 @@ import asyncio
 from copy import deepcopy
 import random
 from pathlib import Path
-from typing import Any, Callable, Coroutine, Dict, List, Optional, Tuple
+from typing import Any, Awaitable, Callable, Coroutine, Dict, List, Optional, Tuple
 
 import yaml
 
@@ -104,6 +104,7 @@ class GameController:
         self._human_action: Optional[Dict[str, Any]] = None
         self._human_action_event = asyncio.Event()
         self._pending_human_turn: Optional[Dict[str, Any]] = None
+        self._human_turn_lock = asyncio.Lock()
 
         # Personality / timing registry loaded from YAML
         self._personality_registry: Dict[str, PersonalityProfile] = {}
@@ -400,6 +401,17 @@ class GameController:
             return None
         return deepcopy(self._pending_human_turn)
 
+    async def replay_pending_human_turn(
+        self,
+        send: Callable[[Dict[str, Any]], Awaitable[None]],
+    ) -> bool:
+        """Atomically replay the outstanding turn through *send*, if any."""
+        async with self._human_turn_lock:
+            if self._pending_human_turn is None:
+                return False
+            await send(deepcopy(self._pending_human_turn))
+            return True
+
     async def _get_human_action(
         self, betting: BettingRound, player: Player
     ) -> Tuple[PlayerAction, int]:
@@ -430,9 +442,10 @@ class GameController:
 
         # Prepare the waiter before publishing the turn so an immediate
         # response from the client cannot be cleared and lost.
-        self._human_action_event.clear()
-        self._human_action = None
-        self._pending_human_turn = deepcopy(turn_payload)
+        async with self._human_turn_lock:
+            self._human_action_event.clear()
+            self._human_action = None
+            self._pending_human_turn = deepcopy(turn_payload)
         try:
             await self._emit("your_turn", deepcopy(turn_payload))
             await self._human_action_event.wait()
@@ -440,7 +453,8 @@ class GameController:
         finally:
             # Also clear on callback failure or task cancellation so a game
             # that stops while waiting never leaves a stale replay payload.
-            self._pending_human_turn = None
+            async with self._human_turn_lock:
+                self._pending_human_turn = None
 
         action_str = action_data.get("action", "FOLD").upper()
         amount = action_data.get("amount", 0)
@@ -467,7 +481,7 @@ class GameController:
 
         return action, amount
 
-    def submit_human_action(self, action: str, amount: int = 0) -> None:
+    async def submit_human_action(self, action: str, amount: int = 0) -> None:
         """Called by the WebSocket handler when the human player acts.
 
         Args:
@@ -475,9 +489,10 @@ class GameController:
                     ``"ALL_IN"``.
             amount: The bet amount (meaningful for RAISE / ALL_IN).
         """
-        self._human_action = {"action": action.upper(), "amount": amount}
-        self._pending_human_turn = None
-        self._human_action_event.set()
+        async with self._human_turn_lock:
+            self._human_action = {"action": action.upper(), "amount": amount}
+            self._pending_human_turn = None
+            self._human_action_event.set()
 
     # ----------------------------------------------------------------------
     # AI action (placeholder — Task 10 will replace with real AI)
