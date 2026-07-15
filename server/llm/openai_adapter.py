@@ -1,146 +1,68 @@
-"""
-OpenAI adapter for Texas Hold'em Poker AI.
-
-Uses the OpenAI Chat Completions API to request a poker decision and parses
-the JSON response into an :class:`LLMDecision`.
-"""
+"""OpenAI Responses API adapter for poker AI decisions."""
 
 from __future__ import annotations
 
 import logging
-from typing import Optional
+from typing import Any, Literal, Optional
 
-import aiohttp
+from openai import AsyncOpenAI
+from pydantic import BaseModel, Field
 
-from server.llm.client import (
-    LLMClient,
-    LLMDecision,
-    _envsubst,
-    _extract_json_from_response,
-)
+from server.llm.client import LLMClient, LLMDecision, _envsubst
 
 logger = logging.getLogger(__name__)
 
 
+class LLMServiceError(RuntimeError):
+    """Raised when OpenAI cannot provide a usable poker decision."""
+
+
+class OpenAIPokerDecision(BaseModel):
+    """Schema enforced for every OpenAI poker decision."""
+
+    action: Literal["FOLD", "CHECK", "CALL", "RAISE", "ALL_IN"]
+    amount: int = Field(default=0, ge=0)
+    reasoning: str = Field(min_length=1, max_length=500)
+    confidence: float = Field(ge=0.0, le=1.0)
+
+
 class OpenAIAdapter(LLMClient):
-    """LLM client for OpenAI's Chat Completions API.
+    """Request schema-validated poker decisions from OpenAI."""
 
-    Configuration keys read from the YAML config dict:
-
-    * ``model`` — model id (default ``"gpt-4"``).
-    * ``api_key`` — API key or ``${ENV_VAR}`` placeholder.
-    * ``max_tokens`` — maximum output tokens (default 500).
-    * ``temperature`` — sampling temperature (default 0.7).
-    * ``timeout_seconds`` — HTTP request timeout (default 30).
-    """
-
-    def __init__(self, config: dict) -> None:
-        self.model = config.get("model", "gpt-4")
-        self.api_key = _envsubst(config.get("api_key", ""))
-        self.max_tokens = config.get("max_tokens", 500)
-        self.temperature = config.get("temperature", 0.7)
-        self.timeout = config.get("timeout_seconds", 30)
-        self._api_url = "https://api.openai.com/v1/chat/completions"
-
-    # ------------------------------------------------------------------
-    # Public API
-    # ------------------------------------------------------------------
-
-    async def decide(self, prompt: str) -> LLMDecision:
-        """Send *prompt* to OpenAI and return a structured poker decision.
-
-        On any error returns a conservative ``FOLD`` fallback.
-        """
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json",
-        }
-
-        payload = {
-            "model": self.model,
-            "max_tokens": self.max_tokens,
-            "temperature": self.temperature,
-            "messages": [
-                {"role": "user", "content": prompt}
-            ],
-        }
-
-        try:
-            timeout = aiohttp.ClientTimeout(total=self.timeout)
-            async with aiohttp.ClientSession(timeout=timeout) as session:
-                async with session.post(
-                    self._api_url, json=payload, headers=headers
-                ) as resp:
-                    if resp.status != 200:
-                        error_text = await resp.text()
-                        logger.error(
-                            "OpenAI API error %s: %s", resp.status, error_text[:500]
-                        )
-                        return self._fallback()
-
-                    data = await resp.json()
-
-        except aiohttp.ClientError as exc:
-            logger.error("OpenAI API request failed: %s", exc)
-            return self._fallback()
-        except Exception as exc:
-            logger.error("Unexpected error calling OpenAI: %s", exc)
-            return self._fallback()
-
-        text = self._extract_text(data)
-        if not text:
-            logger.error("OpenAI response contained no text content.")
-            return self._fallback()
-
-        return self._parse_decision(text)
-
-    # ------------------------------------------------------------------
-    # Helpers
-    # ------------------------------------------------------------------
-
-    @staticmethod
-    def _extract_text(data: dict) -> Optional[str]:
-        """Pull the first message content from a Chat Completions response."""
-        choices = data.get("choices", [])
-        if not choices:
-            return None
-        message = choices[0].get("message", {})
-        return message.get("content", "")
-
-    def _parse_decision(self, text: str) -> LLMDecision:
-        """Parse JSON from the LLM's text response.
-
-        Falls back to a conservative ``FOLD`` on parse failure.
-        """
-        parsed = _extract_json_from_response(text)
-        if parsed is None:
-            logger.warning(
-                "Failed to extract JSON from OpenAI response: %s", text[:300]
-            )
-            return self._fallback()
-
-        action = str(parsed.get("action", "FOLD")).upper()
-        amount = int(parsed.get("amount", 0))
-        reasoning = str(parsed.get("reasoning", ""))
-        confidence = float(parsed.get("confidence", 0.5))
-
-        valid_actions = {"FOLD", "CHECK", "CALL", "RAISE", "ALL_IN"}
-        if action not in valid_actions:
-            logger.warning("Invalid action '%s' from OpenAI, falling back to FOLD.", action)
-            return self._fallback()
-
-        return LLMDecision(
-            action=action,
-            amount=max(0, amount),
-            reasoning=reasoning,
-            confidence=max(0.0, min(1.0, confidence)),
+    def __init__(self, config: dict, client: Optional[Any] = None) -> None:
+        self.model = config.get("model", "gpt-5.6-terra")
+        self.api_key = _envsubst(config.get("api_key", "")) or ""
+        self.max_output_tokens = int(config.get("max_output_tokens", 500))
+        self.timeout = float(config.get("timeout_seconds", 30))
+        self._client = client or AsyncOpenAI(
+            api_key=self.api_key,
+            timeout=self.timeout,
+            max_retries=0,
         )
 
-    def _fallback(self) -> LLMDecision:
-        """Conservative fallback when the LLM is unreachable."""
+    async def decide(self, prompt: str) -> LLMDecision:
+        """Return an OpenAI decision or raise a controlled service error."""
+        try:
+            response = await self._client.responses.parse(
+                model=self.model,
+                input=[{"role": "user", "content": prompt}],
+                text_format=OpenAIPokerDecision,
+                max_output_tokens=self.max_output_tokens,
+            )
+            parsed = response.output_parsed
+            if parsed is None:
+                raise LLMServiceError("OpenAI returned no parsed decision")
+        except LLMServiceError:
+            raise
+        except Exception as exc:
+            logger.warning(
+                "OpenAI decision request failed: %s", type(exc).__name__
+            )
+            raise LLMServiceError("OpenAI decision request failed") from exc
+
         return LLMDecision(
-            action="FOLD",
-            amount=0,
-            reasoning="LLM unavailable — conservative fold.",
-            confidence=0.0,
+            action=parsed.action,
+            amount=parsed.amount,
+            reasoning=parsed.reasoning,
+            confidence=parsed.confidence,
         )

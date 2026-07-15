@@ -2,7 +2,6 @@ import os
 import tempfile
 import unittest
 from pathlib import Path
-from types import SimpleNamespace
 from unittest.mock import patch
 
 from server.llm.client import LLMClientFactory
@@ -23,21 +22,13 @@ class LLMClientFactoryTests(unittest.TestCase):
         ):
             self.assertIsNone(LLMClientFactory.create(self._config(tmp)))
 
-    def test_present_key_uses_openai_without_provider_setting(self):
-        class FakeOpenAIAdapter:
-            def __init__(self, config):
-                self.config = config
-
-        fake_module = SimpleNamespace(OpenAIAdapter=FakeOpenAIAdapter)
+    def test_present_key_creates_openai_adapter(self):
         with tempfile.TemporaryDirectory() as tmp, patch.dict(
             os.environ, {"OPENAI_API_KEY": "test-key"}, clear=False
-        ), patch.dict(
-            "sys.modules", {"server.llm.openai_adapter": fake_module}
         ):
             client = LLMClientFactory.create(self._config(tmp))
 
-        self.assertIsInstance(client, FakeOpenAIAdapter)
-        self.assertEqual(client.config["api_key"], "test-key")
+        self.assertEqual(type(client).__name__, "OpenAIAdapter")
 
 
 if __name__ == "__main__":

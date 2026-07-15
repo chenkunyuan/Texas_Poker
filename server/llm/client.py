@@ -86,47 +86,6 @@ def _envsubst(value: Optional[str]) -> Optional[str]:
     return re.sub(r"\$\{(\w+)\}", _replacer, value)
 
 
-def _extract_json_from_response(text: str) -> Optional[dict]:
-    """Extract a JSON object from an LLM response that may contain markdown.
-
-    Tries several strategies in order:
-
-    1. Extract JSON from a `` ```json ... ``` `` fenced code block.
-    2. Extract JSON from a `` ``` ... ``` `` fenced code block.
-    3. Find the first ``{...}`` object in the raw text.
-
-    Returns:
-        A parsed dict on success, or ``None`` if no JSON could be extracted.
-    """
-    import json
-
-    # Strategy 1: ```json ... ```
-    match = re.search(r"```json\s*([\s\S]*?)\s*```", text)
-    if match:
-        try:
-            return json.loads(match.group(1))
-        except json.JSONDecodeError:
-            pass
-
-    # Strategy 2: ``` ... ```
-    match = re.search(r"```\s*([\s\S]*?)\s*```", text)
-    if match:
-        try:
-            return json.loads(match.group(1))
-        except json.JSONDecodeError:
-            pass
-
-    # Strategy 3: First { ... } object
-    match = re.search(r"\{[\s\S]*\}", text)
-    if match:
-        try:
-            return json.loads(match.group(0))
-        except json.JSONDecodeError:
-            pass
-
-    return None
-
-
 # ---------------------------------------------------------------------------
 # Factory
 # ---------------------------------------------------------------------------
