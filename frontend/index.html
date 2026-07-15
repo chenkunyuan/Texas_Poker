@@ -127,6 +127,7 @@
                     <span class="blinds-info">Blinds: <span id="blinds-display">5/10</span></span>
                     <span class="separator">|</span>
                     <span class="variant-info" id="variant-display">No-Limit</span>
+                    <button id="btn-sound" type="button" aria-pressed="false">Sound off</button>
                 </div>
             </div>
 
@@ -197,35 +198,33 @@
             </div>
 
             <!-- Bottom Action Bar -->
-            <div id="action-bar" class="action-bar">
-                <button id="btn-fold" class="action-btn fold" disabled>
-                    <span class="btn-label">Fold</span>
-                    <span class="btn-shortcut">F</span>
+            <footer id="action-bar" class="action-dock" aria-label="Poker actions">
+                <button id="btn-fold" class="action-button action-fold" data-action="FOLD" type="button" disabled>
+                    Fold <kbd>F</kbd>
                 </button>
-                <button id="btn-check" class="action-btn check" disabled>
-                    <span class="btn-label">Check</span>
-                    <span class="btn-shortcut">C</span>
+                <button id="btn-check" class="action-button" data-action="CHECK" type="button" disabled>
+                    Check <kbd>C</kbd>
                 </button>
-                <button id="btn-call" class="action-btn call" disabled>
-                    <span class="btn-label">Call</span>
-                    <span class="btn-amount" id="call-amount">0</span>
-                    <span class="btn-shortcut">A</span>
+                <button id="btn-call" class="action-button" data-action="CALL" type="button" disabled>
+                    Call <span id="call-amount">0</span> <kbd>A</kbd>
                 </button>
-                <div class="raise-group">
-                    <input type="range" id="raise-slider" class="raise-slider" min="0" max="100" value="0" disabled>
-                    <input type="number" id="raise-amount" class="raise-input" value="0" min="0" disabled>
-                    <button id="btn-raise" class="action-btn raise" disabled>
-                        <span class="btn-label">Raise to</span>
-                        <span class="btn-amount" id="raise-display">0</span>
-                        <span class="btn-shortcut">R</span>
+                <div class="raise-controls">
+                    <div class="raise-field">
+                        <label class="sr-only" for="raise-amount">Raise amount</label>
+                        <input id="raise-amount" type="number" inputmode="numeric" aria-describedby="raise-error" disabled>
+                        <p id="raise-error" class="raise-error" role="alert" hidden></p>
+                    </div>
+                    <button class="preset-button" data-fraction="0.5" type="button" disabled>1/2 pot</button>
+                    <button class="preset-button" data-fraction="0.75" type="button" disabled>3/4 pot</button>
+                    <button class="preset-button" data-fraction="1" type="button" disabled>Pot</button>
+                    <button id="btn-raise" class="action-button action-primary" data-action="RAISE" type="button" disabled>
+                        Raise <kbd>R</kbd>
                     </button>
                 </div>
-                <button id="btn-allin" class="action-btn allin" disabled>
-                    <span class="btn-label">All-In</span>
-                    <span class="btn-amount" id="allin-amount">0</span>
-                    <span class="btn-shortcut">I</span>
+                <button id="btn-allin" class="action-button action-all-in" data-action="ALL_IN" type="button" disabled>
+                    All-in <span id="allin-amount">0</span> <kbd>I</kbd>
                 </button>
-            </div>
+            </footer>
         </div>
 
         <!-- ============================================================ -->
