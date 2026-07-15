@@ -8,6 +8,7 @@ showdown resolution, and event emission to connected clients.
 from __future__ import annotations
 
 import asyncio
+from copy import deepcopy
 import random
 from pathlib import Path
 from typing import Any, Callable, Coroutine, Dict, List, Optional, Tuple
@@ -102,6 +103,7 @@ class GameController:
         # Human-action synchronisation
         self._human_action: Optional[Dict[str, Any]] = None
         self._human_action_event = asyncio.Event()
+        self._pending_human_turn: Optional[Dict[str, Any]] = None
 
         # Personality / timing registry loaded from YAML
         self._personality_registry: Dict[str, PersonalityProfile] = {}
@@ -391,6 +393,13 @@ class GameController:
     # Human action
     # ----------------------------------------------------------------------
 
+    @property
+    def pending_human_turn(self) -> Optional[Dict[str, Any]]:
+        """Return an isolated snapshot of the outstanding human turn."""
+        if self._pending_human_turn is None:
+            return None
+        return deepcopy(self._pending_human_turn)
+
     async def _get_human_action(
         self, betting: BettingRound, player: Player
     ) -> Tuple[PlayerAction, int]:
@@ -412,18 +421,27 @@ class GameController:
                 entry["action"] = entry["action"].value
             client_actions[key] = entry
 
-        await self._emit("your_turn", {
+        turn_payload = {
             "valid_actions": client_actions,
             "min_raise": raise_info.get("min", 0),
             "max_raise": raise_info.get("max", 0),
             "call_amount": call_amount,
-        })
+        }
 
-        # Block until submit_human_action sets the event.
+        # Prepare the waiter before publishing the turn so an immediate
+        # response from the client cannot be cleared and lost.
         self._human_action_event.clear()
-        await self._human_action_event.wait()
+        self._human_action = None
+        self._pending_human_turn = deepcopy(turn_payload)
+        try:
+            await self._emit("your_turn", deepcopy(turn_payload))
+            await self._human_action_event.wait()
+            action_data = self._human_action or {}
+        finally:
+            # Also clear on callback failure or task cancellation so a game
+            # that stops while waiting never leaves a stale replay payload.
+            self._pending_human_turn = None
 
-        action_data = self._human_action or {}
         action_str = action_data.get("action", "FOLD").upper()
         amount = action_data.get("amount", 0)
 
@@ -458,6 +476,7 @@ class GameController:
             amount: The bet amount (meaningful for RAISE / ALL_IN).
         """
         self._human_action = {"action": action.upper(), "amount": amount}
+        self._pending_human_turn = None
         self._human_action_event.set()
 
     # ----------------------------------------------------------------------
