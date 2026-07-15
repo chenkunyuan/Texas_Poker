@@ -12,20 +12,45 @@ Browser-based Texas Hold'em poker game — 1 human player vs N AI agents with LL
 
 ## Quick Start
 
+Create the local secret file with the command for your shell:
+
+```powershell
+# Windows PowerShell
+Copy-Item .env.example .env
+```
+
+```bash
+# macOS, Linux, or Git Bash
+cp .env.example .env
+```
+
+Edit `.env` and replace the placeholder with your DeepSeek API key:
+
+```dotenv
+DEEPSEEK_API_KEY=your-key-here
+```
+
+Then install dependencies and start the server:
+
 ```bash
 # Install dependencies
 pip install -r requirements.txt
 
 # Start server
-python -m uvicorn server.main:app --host 0.0.0.0 --port 8000
+python -m uvicorn server.main:app --host 127.0.0.1 --port 8000
 
 # Open browser
-# http://localhost:8000
+# http://127.0.0.1:8000
 ```
 
 ## Configuration
 
-Edit `config/llm_config.yaml` to tune DeepSeek and the trigger thresholds:
+Store the API key only in the project-root `.env` file. The application loads
+this file during startup, and Git ignores it. Never commit `.env` or place a
+literal API key in a tracked configuration file.
+
+Use `config/llm_config.yaml` only to tune the DeepSeek model and trigger
+thresholds. Keep the API key as an environment-variable reference:
 
 ```yaml
 model: deepseek-v4-flash
@@ -34,7 +59,7 @@ max_tokens: 500
 timeout_seconds: 30
 ```
 
-Copy `.env.example` to `.env` and set `DEEPSEEK_API_KEY`. Never commit `.env`.
+Restart the server after changing `.env` or `config/llm_config.yaml`.
 
 ## Project Structure
 
