@@ -404,12 +404,16 @@ class GameController:
     async def replay_pending_human_turn(
         self,
         send: Callable[[Dict[str, Any]], Awaitable[None]],
+        send_timeout: float = 5.0,
     ) -> bool:
         """Atomically replay the outstanding turn through *send*, if any."""
         async with self._human_turn_lock:
             if self._pending_human_turn is None:
                 return False
-            await send(deepcopy(self._pending_human_turn))
+            await asyncio.wait_for(
+                send(deepcopy(self._pending_human_turn)),
+                timeout=send_timeout,
+            )
             return True
 
     async def _get_human_action(

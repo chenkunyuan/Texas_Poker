@@ -1,6 +1,7 @@
 """Regression tests for replaying an outstanding human turn on reconnect."""
 
 import asyncio
+import json
 from unittest.mock import patch
 
 from fastapi import WebSocketDisconnect
@@ -8,6 +9,7 @@ from fastapi import WebSocketDisconnect
 import server.main as server_main
 from server.engine.game_controller import GameController
 from server.models.schemas import GameConfig, Player, PlayerAction
+from server.ws.manager import WSManager
 
 
 class StubBettingRound:
@@ -53,6 +55,47 @@ class BlockingReplayWebSocket(RecordingWebSocket):
         if message["type"] == "your_turn":
             self.replay_started.set()
             await self.release_replay.wait()
+
+
+class ScriptedWebSocket(RecordingWebSocket):
+    def __init__(self, fail_on_type=None, fail_close=False):
+        super().__init__()
+        self.accepted = asyncio.Event()
+        self.incoming = asyncio.Queue()
+        self.closed = False
+        self.fail_on_type = fail_on_type
+        self.fail_close = fail_close
+
+    async def accept(self):
+        self.accepted.set()
+
+    async def close(self, code=1000):
+        self.closed = True
+        if self.fail_close:
+            raise RuntimeError("failed to close socket")
+
+    async def send_json(self, message):
+        if message["type"] == self.fail_on_type:
+            raise RuntimeError(f"failed to send {message['type']}")
+        self.messages.append(message)
+
+    async def receive_text(self):
+        item = await self.incoming.get()
+        if isinstance(item, Exception):
+            raise item
+        return item
+
+
+class SpyController:
+    def __init__(self):
+        self.state = make_controller().state
+        self.actions = []
+
+    async def replay_pending_human_turn(self, send, send_timeout=5.0):
+        return False
+
+    async def submit_human_action(self, action, amount=0):
+        self.actions.append((action, amount))
 
 
 def make_controller(game_id="test-game"):
@@ -275,6 +318,152 @@ def test_submit_waits_for_in_flight_pending_turn_replay():
     asyncio.run(scenario())
 
 
+def test_replaced_human_socket_cannot_submit_action():
+    async def scenario():
+        manager = WSManager()
+        controller = SpyController()
+        old_socket = ScriptedWebSocket()
+        new_socket = ScriptedWebSocket()
+
+        with (
+            patch.object(server_main, "ws_manager", manager),
+            patch.object(server_main, "_active_games", {"game": controller}),
+        ):
+            old_task = asyncio.create_task(
+                server_main.websocket_endpoint(old_socket, "game")
+            )
+            await asyncio.wait_for(old_socket.accepted.wait(), timeout=1)
+
+            new_task = asyncio.create_task(
+                server_main.websocket_endpoint(new_socket, "game")
+            )
+            await asyncio.wait_for(new_socket.accepted.wait(), timeout=1)
+            assert old_socket.closed
+            assert manager.is_current_human("game", new_socket)
+
+            await old_socket.incoming.put(json.dumps({
+                "type": "player_action", "action": "RAISE", "amount": 90,
+            }))
+            await old_socket.incoming.put(RuntimeError("old disconnected"))
+            await asyncio.wait_for(old_task, timeout=1)
+            assert controller.actions == []
+
+            await new_socket.incoming.put(json.dumps({
+                "type": "player_action", "action": "CHECK", "amount": 0,
+            }))
+            await new_socket.incoming.put(RuntimeError("new disconnected"))
+            await asyncio.wait_for(new_task, timeout=1)
+            assert controller.actions == [("CHECK", 0)]
+
+    asyncio.run(scenario())
+
+
+def test_replacement_survives_old_socket_close_failure():
+    async def scenario():
+        manager = WSManager()
+        old_socket = ScriptedWebSocket(fail_close=True)
+        new_socket = ScriptedWebSocket()
+
+        await manager.connect("game", old_socket, is_human=True)
+        await manager.connect("game", new_socket, is_human=True)
+
+        assert old_socket.closed
+        assert not manager.is_connected("game", old_socket)
+        assert manager.is_connected("game", new_socket)
+        assert manager.is_current_human("game", new_socket)
+
+    asyncio.run(scenario())
+
+
+def test_initial_state_send_failure_disconnects_socket():
+    async def scenario():
+        manager = WSManager()
+        controller = SpyController()
+        websocket = ScriptedWebSocket(fail_on_type="game_state")
+
+        with (
+            patch.object(server_main, "ws_manager", manager),
+            patch.object(server_main, "_active_games", {"game": controller}),
+        ):
+            await server_main.websocket_endpoint(websocket, "game")
+
+        assert not manager.is_connected("game", websocket)
+        assert not manager.is_current_human("game", websocket)
+
+    asyncio.run(scenario())
+
+
+def test_pending_replay_send_failure_disconnects_socket():
+    async def scenario():
+        manager = WSManager()
+        controller = make_controller("game")
+        player = Player(id="human", name="You", is_human=True, chips=1000)
+        emitted = asyncio.Event()
+
+        async def on_your_turn(data):
+            emitted.set()
+
+        controller.on("your_turn", on_your_turn)
+        action_task = asyncio.create_task(
+            controller._get_human_action(StubBettingRound(), player)
+        )
+        await asyncio.wait_for(emitted.wait(), timeout=1)
+        websocket = ScriptedWebSocket(fail_on_type="your_turn")
+
+        with (
+            patch.object(server_main, "ws_manager", manager),
+            patch.object(server_main, "_active_games", {"game": controller}),
+        ):
+            await server_main.websocket_endpoint(websocket, "game")
+
+        assert not manager.is_connected("game", websocket)
+        assert controller.pending_human_turn is not None
+        await controller.submit_human_action("CHECK")
+        await asyncio.wait_for(action_task, timeout=1)
+
+    asyncio.run(scenario())
+
+
+def test_pending_replay_timeout_releases_lock_and_preserves_turn():
+    async def scenario():
+        controller = make_controller()
+        player = Player(id="human", name="You", is_human=True, chips=1000)
+        emitted = asyncio.Event()
+        send_cancelled = asyncio.Event()
+
+        async def on_your_turn(data):
+            emitted.set()
+
+        async def blocked_send(data):
+            try:
+                await asyncio.Event().wait()
+            finally:
+                send_cancelled.set()
+
+        controller.on("your_turn", on_your_turn)
+        action_task = asyncio.create_task(
+            controller._get_human_action(StubBettingRound(), player)
+        )
+        await asyncio.wait_for(emitted.wait(), timeout=1)
+
+        try:
+            await controller.replay_pending_human_turn(
+                blocked_send, send_timeout=0.01
+            )
+        except TimeoutError:
+            pass
+        else:
+            raise AssertionError("blocked replay should time out")
+
+        assert send_cancelled.is_set()
+        assert controller.pending_human_turn is not None
+        await asyncio.wait_for(controller.submit_human_action("CHECK"), timeout=1)
+        await asyncio.wait_for(action_task, timeout=1)
+        assert controller.pending_human_turn is None
+
+    asyncio.run(scenario())
+
+
 if __name__ == "__main__":
     test_pending_human_turn_is_snapshot_and_clears_on_submit()
     test_immediate_human_response_during_turn_emit_is_not_lost()
@@ -282,4 +471,9 @@ if __name__ == "__main__":
     test_websocket_attach_sends_state_then_pending_turn()
     test_websocket_does_not_replay_absent_or_consumed_turn()
     test_submit_waits_for_in_flight_pending_turn_replay()
+    test_replaced_human_socket_cannot_submit_action()
+    test_replacement_survives_old_socket_close_failure()
+    test_initial_state_send_failure_disconnects_socket()
+    test_pending_replay_send_failure_disconnects_socket()
+    test_pending_replay_timeout_releases_lock_and_preserves_turn()
     print("All WebSocket turn replay tests passed!")

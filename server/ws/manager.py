@@ -61,18 +61,32 @@ class WSManager:
         """
         await websocket.accept()
 
+        previous_human = self.human_ws.get(game_id) if is_human else None
+        if previous_human is not None and previous_human is not websocket:
+            self.disconnect(game_id, previous_human)
+
         if game_id not in self.connections:
             self.connections[game_id] = []
-        self.connections[game_id].append(websocket)
+        if websocket not in self.connections[game_id]:
+            self.connections[game_id].append(websocket)
 
         if is_human:
             self.human_ws[game_id] = websocket
+
+        if previous_human is not None and previous_human is not websocket:
+            try:
+                await previous_human.close(code=1000)
+            except Exception:
+                logger.debug(
+                    "Failed to close replaced human WebSocket for game '%s'.",
+                    game_id,
+                )
 
         logger.info(
             "WebSocket connected to game '%s' (human=%s, total=%d)",
             game_id,
             is_human,
-            len(self.connections[game_id]),
+            len(self.connections.get(game_id, [])),
         )
 
     def disconnect(self, game_id: str, websocket: WebSocket) -> None:
@@ -90,7 +104,7 @@ class WSManager:
             del self.human_ws[game_id]
 
         # Prune empty lists
-        if conns and len(conns) == 0:
+        if conns is not None and len(conns) == 0:
             del self.connections[game_id]
 
         logger.debug(
@@ -98,6 +112,14 @@ class WSManager:
             game_id,
             len(conns) if conns else 0,
         )
+
+    def is_connected(self, game_id: str, websocket: WebSocket) -> bool:
+        """Return whether *websocket* is still registered for *game_id*."""
+        return websocket in self.connections.get(game_id, [])
+
+    def is_current_human(self, game_id: str, websocket: WebSocket) -> bool:
+        """Return whether *websocket* owns the human seat for *game_id*."""
+        return self.human_ws.get(game_id) is websocket
 
     # ------------------------------------------------------------------
     # Message delivery

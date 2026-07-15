@@ -189,25 +189,27 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str) -> None:
 
     await ws_manager.connect(game_id, websocket, is_human=True)
 
-    # If the game exists and hasn't started yet, send initial state.
-    if controller is not None:
-        # Send initial game state so the client can render the table.
-        state_dict = _serialize_state(controller.state)
-        await websocket.send_json({"type": "game_state", "state": state_dict})
-
-        # A reconnect may happen while the game loop is waiting for the
-        # human. Replay an isolated snapshot after the fresh state so the
-        # client can restore the same legal controls.
-        await controller.replay_pending_human_turn(
-            lambda pending_turn: websocket.send_json(
-                {"type": "your_turn", **pending_turn}
-            )
-        )
-
     try:
+        # If the game exists and hasn't started yet, send initial state.
+        if controller is not None:
+            # Send initial game state so the client can render the table.
+            state_dict = _serialize_state(controller.state)
+            await websocket.send_json({"type": "game_state", "state": state_dict})
+
+            # A reconnect may happen while the game loop is waiting for the
+            # human. Replay an isolated snapshot after the fresh state so the
+            # client can restore the same legal controls.
+            await controller.replay_pending_human_turn(
+                lambda pending_turn: websocket.send_json(
+                    {"type": "your_turn", **pending_turn}
+                )
+            )
+
         while True:
             message = await ws_manager.receive_message(game_id, websocket)
             if message is None:
+                if not ws_manager.is_connected(game_id, websocket):
+                    break
                 continue
 
             msg_type = message.get("type", "")
@@ -216,7 +218,12 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str) -> None:
                 action = message.get("action", "FOLD")
                 amount = message.get("amount", 0)
 
-                if controller is not None:
+                if not ws_manager.is_current_human(game_id, websocket):
+                    logger.warning(
+                        "Ignoring player_action from replaced socket for game '%s'.",
+                        game_id,
+                    )
+                elif controller is not None:
                     await controller.submit_human_action(action, amount)
                 else:
                     logger.warning(
