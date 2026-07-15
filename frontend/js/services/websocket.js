@@ -5,10 +5,11 @@ export function createWebSocketClient({
 } = {}) {
     const handlers = new Map();
     let socket = null;
-    let url = "";
     let manualClose = false;
     let attempts = 0;
     let reconnectTimer = null;
+    let generation = 0;
+    let connectionRequest = null;
 
     const emit = (type, payload = {}) => {
         (handlers.get(type) || []).forEach((fn) => fn(payload));
@@ -16,22 +17,47 @@ export function createWebSocketClient({
     const on = (type, fn) => {
         handlers.set(type, [...(handlers.get(type) || []), fn]);
     };
-    const connect = (nextUrl) => new Promise((resolve, reject) => {
-        url = nextUrl;
-        manualClose = false;
+    const clearReconnectTimer = () => {
+        if (reconnectTimer === null) return;
+        clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+    };
+    const resolveConnection = (currentGeneration) => {
+        if (connectionRequest?.generation !== currentGeneration) return;
+        const { resolve } = connectionRequest;
+        connectionRequest = null;
+        resolve();
+    };
+    const rejectConnection = (currentGeneration, error) => {
+        if (connectionRequest?.generation !== currentGeneration) return;
+        const { reject } = connectionRequest;
+        connectionRequest = null;
+        reject(error);
+    };
+    const openSocket = (currentGeneration, targetUrl) => {
+        if (currentGeneration !== generation || manualClose) return;
         emit("connection", { status: attempts ? "reconnecting" : "connecting" });
+        let candidate;
         try {
-            socket = new WebSocketImpl(url);
+            candidate = new WebSocketImpl(targetUrl);
+            socket = candidate;
         } catch (error) {
-            reject(error);
+            rejectConnection(currentGeneration, error);
             return;
         }
-        socket.onopen = () => {
+        const isCurrent = () => (
+            currentGeneration === generation
+            && candidate === socket
+            && !manualClose
+        );
+        candidate.onopen = () => {
+            if (!isCurrent()) return;
             attempts = 0;
             emit("connection", { status: "connected" });
-            resolve();
+            resolveConnection(currentGeneration);
         };
-        socket.onmessage = (event) => {
+        candidate.onmessage = (event) => {
+            if (!isCurrent()) return;
             try {
                 const message = JSON.parse(event.data);
                 emit(message.type || "_unknown", message);
@@ -39,18 +65,47 @@ export function createWebSocketClient({
                 emit("protocol_error", { message: "Invalid server message." });
             }
         };
-        socket.onerror = () => emit("connection", { status: "error" });
-        socket.onclose = () => {
+        candidate.onerror = () => {
+            if (isCurrent()) emit("connection", { status: "error" });
+        };
+        candidate.onclose = () => {
+            if (!isCurrent()) return;
+            socket = null;
             emit("connection", { status: "disconnected" });
             if (!manualClose && attempts < maxRetries) {
                 attempts += 1;
                 reconnectTimer = setTimeout(() => {
                     reconnectTimer = null;
-                    if (!manualClose) connect(url).catch(() => {});
+                    if (currentGeneration === generation && !manualClose) {
+                        openSocket(currentGeneration, targetUrl);
+                    }
                 }, retryDelay);
+            } else {
+                rejectConnection(
+                    currentGeneration,
+                    new Error(`WebSocket connection failed after ${attempts + 1} attempts.`),
+                );
             }
         };
-    });
+    };
+    const connect = (nextUrl) => {
+        clearReconnectTimer();
+        generation += 1;
+        const currentGeneration = generation;
+        const previousSocket = socket;
+        socket = null;
+        if (connectionRequest) {
+            connectionRequest.reject(new Error("WebSocket connection was superseded."));
+            connectionRequest = null;
+        }
+        previousSocket?.close();
+        manualClose = false;
+        attempts = 0;
+        return new Promise((resolve, reject) => {
+            connectionRequest = { generation: currentGeneration, resolve, reject };
+            openSocket(currentGeneration, nextUrl);
+        });
+    };
 
     return {
         connect,
@@ -62,12 +117,15 @@ export function createWebSocketClient({
         },
         close() {
             manualClose = true;
-            if (reconnectTimer !== null) {
-                clearTimeout(reconnectTimer);
-                reconnectTimer = null;
+            generation += 1;
+            clearReconnectTimer();
+            if (connectionRequest) {
+                connectionRequest.reject(new Error("WebSocket connection was closed."));
+                connectionRequest = null;
             }
-            socket?.close();
+            const currentSocket = socket;
             socket = null;
+            currentSocket?.close();
         },
         isConnected: () => socket?.readyState === WebSocketImpl.OPEN,
     };
