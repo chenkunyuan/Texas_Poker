@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 const index = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+const app = readFileSync(new URL("../js/app.js", import.meta.url), "utf8");
 
 function actionDock(html) {
     return html.match(/<footer id="action-bar"[\s\S]*?<\/footer>/)?.[0].replace(/\s+/g, " ").trim();
@@ -38,4 +39,13 @@ test("the shared error banner is outside every hidden application view", () => {
 
     assert.notEqual(bannerPosition, -1);
     assert.ok(bannerPosition < firstViewPosition);
+});
+
+test("authoritative game state clears stale actions before applying a cached turn", () => {
+    const handler = app.match(/socket\.on\("game_state",[\s\S]*?\n\}\);/)?.[0] || "";
+    const clearPosition = handler.indexOf("actions.setTurn(null, game)");
+    const applyPosition = handler.indexOf("if (cachedTurn) applyTurn(cachedTurn)");
+
+    assert.ok(clearPosition >= 0);
+    assert.ok(clearPosition < applyPosition);
 });

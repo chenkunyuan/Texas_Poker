@@ -121,6 +121,17 @@ test("clearing pending keeps the previous turn disabled until a new turn arrives
     assert.equal(root.actions.get("CALL").disabled, true);
 });
 
+test("clearing the authoritative turn disables every action", () => {
+    const { root, controls } = createHarness();
+    controls.setTurn(turn, gameState);
+
+    controls.setTurn(null, gameState);
+
+    for (const button of root.actions.values()) assert.equal(button.disabled, true);
+    assert.equal(root.elements.get("raise-amount").disabled, true);
+    assert.equal(root.presets.every((preset) => preset.disabled), true);
+});
+
 test("raise presets clamp pot fractions and invalid raises stay inline", () => {
     const { root, controls } = createHarness();
     const submitted = [];

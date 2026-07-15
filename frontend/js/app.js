@@ -124,11 +124,11 @@ socket.on("connection", ({ status: value }) => {
 
 socket.on("game_state", (message) => {
     const game = normalizeGameState(message.state);
+    actions.setTurn(null, game);
     const cachedTurn = turnSync.receiveGameState();
     store.update({ game, turn: null, pendingAction: false });
     table.render(game);
     renderGameMeta(game);
-    actions.setPending(false);
     maxHand = Math.max(maxHand, game.hand_number);
     if (cachedTurn) applyTurn(cachedTurn);
 });
