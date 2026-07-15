@@ -136,7 +136,7 @@ export function createActionControls(root = document) {
         },
         setPending(value) {
             pending = Boolean(value);
-            renderAvailability();
+            if (pending) disable();
         },
         disable,
     };

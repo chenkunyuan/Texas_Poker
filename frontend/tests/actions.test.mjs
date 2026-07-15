@@ -105,6 +105,22 @@ test("pending state prevents rapid duplicate submissions", () => {
     assert.equal(root.actions.get("CALL").disabled, true);
 });
 
+test("clearing pending keeps the previous turn disabled until a new turn arrives", () => {
+    const { root, controls } = createHarness();
+    controls.setTurn(turn, gameState);
+    root.actions.get("CALL").click();
+
+    controls.setPending(false);
+
+    for (const button of root.actions.values()) assert.equal(button.disabled, true);
+    assert.equal(root.elements.get("raise-amount").disabled, true);
+    assert.equal(root.presets.every((preset) => preset.disabled), true);
+
+    controls.setTurn({ ...turn, valid_actions: { CHECK: {} } }, gameState);
+    assert.equal(root.actions.get("CHECK").disabled, false);
+    assert.equal(root.actions.get("CALL").disabled, true);
+});
+
 test("raise presets clamp pot fractions and invalid raises stay inline", () => {
     const { root, controls } = createHarness();
     const submitted = [];
