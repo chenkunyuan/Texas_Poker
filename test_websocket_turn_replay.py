@@ -141,6 +141,40 @@ def test_pending_human_turn_is_snapshot_and_clears_on_submit():
     asyncio.run(scenario())
 
 
+def test_only_first_action_is_accepted_for_pending_human_turn():
+    async def scenario():
+        controller = make_controller()
+
+        assert await controller.submit_human_action("FOLD") is False
+        assert controller._human_action is None
+        assert not controller._human_action_event.is_set()
+
+        player = Player(id="human", name="You", is_human=True, chips=1000)
+        emitted = asyncio.Event()
+
+        async def on_your_turn(data):
+            emitted.set()
+
+        controller.on("your_turn", on_your_turn)
+        action_task = asyncio.create_task(
+            controller._get_human_action(StubBettingRound(), player)
+        )
+        await asyncio.wait_for(emitted.wait(), timeout=1)
+
+        first = await controller.submit_human_action("RAISE", 50)
+        second = await controller.submit_human_action("FOLD")
+
+        assert first is True
+        assert second is False
+        assert controller._human_action == {"action": "RAISE", "amount": 50}
+        assert await asyncio.wait_for(action_task, timeout=1) == (
+            PlayerAction.RAISE,
+            50,
+        )
+
+    asyncio.run(scenario())
+
+
 def test_immediate_human_response_during_turn_emit_is_not_lost():
     async def scenario():
         controller = make_controller()
@@ -466,6 +500,7 @@ def test_pending_replay_timeout_releases_lock_and_preserves_turn():
 
 if __name__ == "__main__":
     test_pending_human_turn_is_snapshot_and_clears_on_submit()
+    test_only_first_action_is_accepted_for_pending_human_turn()
     test_immediate_human_response_during_turn_emit_is_not_lost()
     test_failed_turn_delivery_does_not_leave_pending_replay()
     test_websocket_attach_sends_state_then_pending_turn()

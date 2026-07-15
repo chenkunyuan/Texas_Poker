@@ -485,18 +485,25 @@ class GameController:
 
         return action, amount
 
-    async def submit_human_action(self, action: str, amount: int = 0) -> None:
+    async def submit_human_action(self, action: str, amount: int = 0) -> bool:
         """Called by the WebSocket handler when the human player acts.
 
         Args:
             action: One of ``"FOLD"``, ``"CHECK"``, ``"CALL"``, ``"RAISE"``,
                     ``"ALL_IN"``.
             amount: The bet amount (meaningful for RAISE / ALL_IN).
+
+        Returns:
+            ``True`` when this is the first action for the pending human turn;
+            ``False`` when no human action is currently pending.
         """
         async with self._human_turn_lock:
+            if self._pending_human_turn is None:
+                return False
             self._human_action = {"action": action.upper(), "amount": amount}
             self._pending_human_turn = None
             self._human_action_event.set()
+            return True
 
     # ----------------------------------------------------------------------
     # AI action (placeholder — Task 10 will replace with real AI)
