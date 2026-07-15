@@ -48,7 +48,7 @@ class AIManagerLLMTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(build.call_args.kwargs["hole_cards"], actor.hole_cards)
         self.assertNotIn("players", build.call_args.kwargs)
 
-    def test_prompt_leaves_output_shape_to_structured_api(self):
+    def test_prompt_explicitly_requests_json_schema(self):
         prompt = build_poker_prompt(
             personality=None,
             hole_cards=[],
@@ -60,8 +60,9 @@ class AIManagerLLMTests(unittest.IsolatedAsyncioTestCase):
             action_history=[],
         )
 
-        self.assertNotIn("single JSON object", prompt)
-        self.assertNotIn("```json", prompt)
+        self.assertIn("single JSON object", prompt)
+        self.assertIn('"action"', prompt)
+        self.assertIn('"confidence"', prompt)
 
 
 if __name__ == "__main__":

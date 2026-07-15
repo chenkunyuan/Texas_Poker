@@ -1,7 +1,7 @@
-# OpenAI Responses API configuration
-model: gpt-5.6-terra
-api_key: ${OPENAI_API_KEY}
-max_output_tokens: 500
+# DeepSeek Chat Completions configuration
+model: deepseek-v4-flash
+api_key: ${DEEPSEEK_API_KEY}
+max_tokens: 500
 timeout_seconds: 30
 
 # LLM trigger thresholds
