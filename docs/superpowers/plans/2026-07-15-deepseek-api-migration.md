@@ -432,17 +432,32 @@ import asyncio
 
 from dotenv import load_dotenv
 
+from server.ai.prompts import build_poker_prompt
 from server.llm.client import LLMClientFactory
 
-load_dotenv()
+load_dotenv(dotenv_path=".env")
 client = LLMClientFactory.create()
 assert client is not None, "DeepSeek client unavailable"
-decision = asyncio.run(
-    client.decide(
-        "Return JSON. Hold'em test: AK suited, pot 15, call 10, "
-        "stack 990; legal actions FOLD, CALL, RAISE 20-990."
-    )
+prompt = build_poker_prompt(
+    personality=None,
+    hole_cards=[],
+    community_cards=[],
+    pot=15,
+    current_bet=10,
+    player_chips=990,
+    position=None,
+    action_history=[],
+    valid_actions={
+        "FOLD": {"action": "FOLD", "amount": 0},
+        "CALL": {"action": "CALL", "amount": 10},
+        "RAISE": {"action": "RAISE", "min": 20, "max": 990},
+    },
 )
+try:
+    decision = asyncio.run(client.decide(prompt))
+except Exception as exc:
+    print("LIVE_REQUEST_ERROR=" + type(exc).__name__)
+    raise SystemExit(1)
 print("action=" + decision.action)
 print("amount=" + str(decision.amount))
 print("confidence=" + str(decision.confidence))
