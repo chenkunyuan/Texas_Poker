@@ -206,7 +206,6 @@ var SetupView = (function () {
             starting_chips: _readInt("starting-chips", 1000),
             blinds: blinds,
             personality_mode: _toggles.personality_mode,
-            llm_provider: _readSelect("llm-provider", "anthropic"),
         };
     }
 

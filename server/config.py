@@ -6,7 +6,7 @@ directory.  These are used by :class:`GameController`, :class:`AIManager`,
 and the FastAPI application entry-point.
 
 Files loaded:
-* ``config/llm_config.yaml`` — LLM provider, model, trigger thresholds.
+* ``config/llm_config.yaml`` — OpenAI model and trigger thresholds.
 * ``config/personalities.yaml`` — AI personality profiles and decision timing.
 """
 
@@ -29,9 +29,8 @@ _PERSONALITIES_PATH = _PROJECT_ROOT / "config" / "personalities.yaml"
 def load_llm_config() -> dict[str, Any]:
     """Load the LLM configuration from ``config/llm_config.yaml``.
 
-    Returns a dictionary with keys such as ``provider``, ``model``,
-    ``api_key``, ``max_tokens``, ``temperature``, ``timeout_seconds``,
-    ``trigger``, and ``custom``.
+    Returns a dictionary with keys such as ``model``, ``api_key``,
+    ``max_output_tokens``, ``timeout_seconds``, and ``trigger``.
 
     Environment-variable placeholders (``${VAR_NAME}``) in string values
     are substituted automatically.

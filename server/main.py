@@ -81,8 +81,7 @@ async def start_game(config: GameConfig) -> JSONResponse:
           "ai_player_count": 5,
           "starting_chips": 1000,
           "blinds": { "mode": "fixed", "small": 5, "big": 10 },
-          "personality_mode": "random",
-          "llm_provider": "anthropic"
+          "personality_mode": "random"
         }
 
     Response::

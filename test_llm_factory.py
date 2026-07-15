@@ -5,6 +5,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from server.llm.client import LLMClientFactory
+from server.models.schemas import GameConfig
 
 
 class LLMClientFactoryTests(unittest.TestCase):
@@ -29,6 +30,12 @@ class LLMClientFactoryTests(unittest.TestCase):
             client = LLMClientFactory.create(self._config(tmp))
 
         self.assertEqual(type(client).__name__, "OpenAIAdapter")
+
+
+class GameConfigTests(unittest.TestCase):
+    def test_provider_field_is_not_part_of_game_config(self):
+        config = GameConfig(ai_player_count=3)
+        self.assertNotIn("llm_provider", config.model_dump())
 
 
 if __name__ == "__main__":

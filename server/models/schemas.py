@@ -198,7 +198,6 @@ class GameConfig(BaseModel):
     blinds: BlindsConfig = Field(default_factory=BlindsConfig)
     personality_mode: Literal["random", "manual"] = "random"
     manual_personalities: Optional[List[PersonalityProfile]] = None
-    llm_provider: Literal["anthropic", "openai", "custom"] = "anthropic"
 
 
 class GameState(BaseModel):

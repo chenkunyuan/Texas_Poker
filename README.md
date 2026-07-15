@@ -6,7 +6,7 @@ Browser-based Texas Hold'em poker game — 1 human player vs N AI agents with LL
 
 - **Full Texas Hold'em rules** — No-Limit & Pot-Limit, side pots, full hand evaluation
 - **AI opponents** — 4 personality profiles (TAG / LAG / Nit / Calling Station)
-- **Hybrid AI** — Rule engine + optional LLM enhancement (Claude / OpenAI / Custom)
+- **Hybrid AI** — Rule engine + OpenAI enhancement for difficult decisions
 - **Real-time gameplay** — WebSocket-powered, dark casino theme
 - **Replay system** — Full hand history recording with statistics (VPIP / PFR / AF)
 
@@ -25,15 +25,15 @@ python -m uvicorn server.main:app --host 0.0.0.0 --port 8000
 
 ## Configuration
 
-Edit `config/llm_config.yaml` to set up LLM provider:
+Edit `config/llm_config.yaml` to tune the OpenAI model and trigger thresholds:
 
 ```yaml
-provider: anthropic        # anthropic | openai | custom
-model: claude-sonnet-4-6
-api_key: ${ANTHROPIC_API_KEY}
+model: gpt-5.6-terra
+api_key: ${OPENAI_API_KEY}
+max_output_tokens: 500
 ```
 
-Copy `.env.example` to `.env` and fill in your API keys.
+Copy `.env.example` to `.env` and set `OPENAI_API_KEY`. Never commit `.env`.
 
 ## Project Structure
 
@@ -43,7 +43,7 @@ Texas_Poker/
 │   ├── main.py              # FastAPI entry point
 │   ├── engine/              # Game engine (deck, evaluator, betting, pot, dealer, controller)
 │   ├── ai/                  # AI system (rule engine, personality, prompts, manager)
-│   ├── llm/                 # LLM adapters (Claude, OpenAI, Custom)
+│   ├── llm/                 # OpenAI Responses API adapter
 │   ├── replay/              # Replay logger & playback
 │   ├── ws/                  # WebSocket manager
 │   └── models/              # Pydantic data models
@@ -69,5 +69,5 @@ Texas_Poker/
 
 - **Backend:** Python / FastAPI / WebSocket
 - **Frontend:** Vanilla HTML / CSS / JavaScript
-- **LLM:** Provider-agnostic adapter (Anthropic / OpenAI / Custom)
+- **LLM:** OpenAI Responses API with structured decisions
 - **Storage:** JSON replay files
