@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Texas Hold'em Poker</title>
     <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/tokens.css">
+    <link rel="stylesheet" href="/static/css/base.css">
+    <link rel="stylesheet" href="/static/css/setup.css">
+    <link rel="stylesheet" href="/static/css/game.css">
+    <link rel="stylesheet" href="/static/css/results.css">
 </head>
 <body>
     <div id="app">
@@ -67,7 +72,7 @@
                             </div>
                         </div>
 
-                        <div class="form-group blinds-values" id="blinds-increasing-group" style="display:none;">
+                        <div class="form-group blinds-values" id="blinds-increasing-group">
                             <label>Increasing Blinds</label>
                             <div class="inline-inputs">
                                 <div class="inline-field">
@@ -103,101 +108,61 @@
                 </div>
 
                 <button id="btn-start-game" class="btn-gold">
-                    <span class="btn-icon">♠</span> Start Game
+                    <span class="btn-icon" aria-hidden="true">♠</span><span class="btn-label">Start game</span>
                 </button>
-                <p id="setup-error" class="error-text" style="display:none;"></p>
+                <p id="setup-error" class="error-text" hidden></p>
             </div>
         </div>
 
         <!-- ============================================================ -->
         <!-- GAME VIEW                                                    -->
         <!-- ============================================================ -->
-        <div id="game-view" class="view" style="display:none;">
-            <!-- Top Bar -->
-            <div class="top-bar">
-                <div class="top-bar-left">
-                    <span class="game-title">Texas Hold'em <span class="gold">Poker</span></span>
+        <section id="game-view" class="view game-view" hidden>
+            <header class="game-topbar">
+                <div class="brand">
+                    <span class="brand-mark" aria-hidden="true">♠</span>
+                    <span>Texas Hold'em</span>
                 </div>
-                <div class="top-bar-center">
-                    <span class="hand-info">Hand #<span id="hand-number">1</span></span>
-                    <span class="separator">|</span>
-                    <span class="phase-info" id="phase-display">Pre-Flop</span>
+                <div class="game-meta">
+                    <span>Hand #<b id="hand-number">0</b></span>
+                    <span id="phase-display">Waiting</span>
+                    <span id="blinds-display">—</span>
                 </div>
-                <div class="top-bar-right">
-                    <span class="blinds-info">Blinds: <span id="blinds-display">5/10</span></span>
-                    <span class="separator">|</span>
-                    <span class="variant-info" id="variant-display">No-Limit</span>
+                <div class="game-tools">
+                    <span id="connection-status" role="status" data-status="disconnected">Disconnected</span>
                     <button id="btn-sound" type="button" aria-pressed="false">Sound off</button>
                 </div>
+            </header>
+
+            <div id="error-banner" class="error-banner" role="alert" hidden>
+                <span id="error-message"></span>
+                <button id="btn-dismiss-error" type="button" aria-label="Dismiss error">×</button>
             </div>
 
-            <!-- Main Game Area -->
-            <div class="game-main">
-                <!-- Left Sidebar -->
-                <div class="sidebar sidebar-left">
-                    <div class="sidebar-section">
-                        <h3 class="sidebar-title">Your Cards</h3>
-                        <div id="your-cards" class="hole-cards-display">
-                            <div class="card-placeholder">?</div>
-                            <div class="card-placeholder">?</div>
-                        </div>
+            <main id="game-stage" class="game-stage">
+                <section id="poker-table" class="poker-table" aria-label="Poker table">
+                    <div class="table-felt">
+                        <div id="pot-label" class="pot-label">Pot 0</div>
+                        <div id="community-cards" class="community-cards" aria-label="Community cards"></div>
+                        <div id="player-spots"></div>
                     </div>
-                    <div class="sidebar-section">
-                        <h3 class="sidebar-title">Position</h3>
-                        <span id="your-position" class="position-badge">--</span>
-                    </div>
-                    <div class="sidebar-section">
-                        <h3 class="sidebar-title">Chips</h3>
-                        <span id="your-chips" class="chip-count">0</span>
-                    </div>
-                    <div class="sidebar-section">
-                        <h3 class="sidebar-title">Pot</h3>
-                        <span id="pot-display" class="pot-amount">0</span>
-                    </div>
-                    <div class="sidebar-section">
-                        <h3 class="sidebar-title">Current Bet</h3>
-                        <span id="current-bet-display" class="bet-amount">0</span>
-                    </div>
-                </div>
+                </section>
 
-                <!-- Center: Poker Table -->
-                <div class="table-area">
-                    <div id="poker-table" class="poker-table">
-                        <!-- Table Felt -->
-                        <div class="table-felt">
-                            <!-- Community Cards -->
-                            <div id="community-cards" class="community-cards">
-                                <div class="card-slot empty"></div>
-                                <div class="card-slot empty"></div>
-                                <div class="card-slot empty"></div>
-                                <div class="card-slot empty"></div>
-                                <div class="card-slot empty"></div>
-                            </div>
-                            <!-- Pot Label -->
-                            <div id="pot-label" class="pot-label">Pot: 0</div>
-                            <!-- Players positioned around the oval -->
-                            <div id="player-spots" class="player-spots">
-                                <!-- Dynamically filled by JS -->
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Thinking indicator -->
-                    <div id="thinking-indicator" class="thinking-indicator" style="display:none;">
-                        <span class="pulse-dot"></span>
-                        <span id="thinking-text">AI is thinking...</span>
-                    </div>
-                </div>
+                <aside id="hand-panel" class="floating-panel hand-panel" aria-label="Your hand"></aside>
 
-                <!-- Right Sidebar: Action Log -->
-                <div class="sidebar sidebar-right">
-                    <h3 class="sidebar-title">Action Log</h3>
-                    <div id="action-log" class="action-log">
-                        <div class="log-entry system">Game started. Waiting for first hand...</div>
-                    </div>
-                </div>
-            </div>
+                <aside id="action-log-panel" class="floating-panel action-log-panel">
+                    <header>
+                        <h2>Action log</h2>
+                        <button id="btn-toggle-log" type="button" aria-expanded="true">Collapse</button>
+                    </header>
+                    <div id="action-log" aria-live="polite"></div>
+                </aside>
 
-            <!-- Bottom Action Bar -->
+                <div id="thinking-indicator" class="thinking-indicator" hidden>
+                    <span id="thinking-text"></span>
+                </div>
+            </main>
+
             <footer id="action-bar" class="action-dock" aria-label="Poker actions">
                 <button id="btn-fold" class="action-button action-fold" data-action="FOLD" type="button" disabled>
                     Fold <kbd>F</kbd>
@@ -225,12 +190,14 @@
                     All-in <span id="allin-amount">0</span> <kbd>I</kbd>
                 </button>
             </footer>
-        </div>
+
+            <div id="live-announcer" class="sr-only" aria-live="assertive"></div>
+        </section>
 
         <!-- ============================================================ -->
         <!-- RESULTS VIEW                                                 -->
         <!-- ============================================================ -->
-        <div id="results-view" class="view" style="display:none;">
+        <div id="results-view" class="view" hidden>
             <div class="results-container">
                 <div class="results-header">
                     <div class="trophy">🏆</div>
@@ -269,11 +236,6 @@
 
     </div>
 
-    <!-- JavaScript Modules -->
-    <script src="/static/js/ws.js"></script>
-    <script src="/static/js/setup.js"></script>
-    <script src="/static/js/table.js"></script>
-    <script src="/static/js/results.js"></script>
-    <script src="/static/js/app.js"></script>
+    <script type="module" src="/static/js/app.js"></script>
 </body>
 </html>
