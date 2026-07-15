@@ -149,3 +149,17 @@ test("a stale close cannot replace a newer connection", async () => {
     assert.equal(client.send({ type: "current" }), true);
     assert.deepEqual(newSocket.sent, [JSON.stringify({ type: "current" })]);
 });
+
+test("closing from a connecting handler does not create a ghost socket", async () => {
+    resetSockets();
+    const client = createWebSocketClient({ WebSocketImpl: FakeWebSocket, retryDelay: 1 });
+    client.on("connection", ({ status }) => {
+        if (status === "connecting") client.close();
+    });
+
+    const connected = client.connect("ws://example.test/game");
+
+    await assert.rejects(connected, /closed/i);
+    assert.equal(FakeWebSocket.instances.length, 0);
+    assert.equal(client.isConnected(), false);
+});

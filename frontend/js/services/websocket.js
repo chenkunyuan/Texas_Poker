@@ -37,6 +37,7 @@ export function createWebSocketClient({
     const openSocket = (currentGeneration, targetUrl) => {
         if (currentGeneration !== generation || manualClose) return;
         emit("connection", { status: attempts ? "reconnecting" : "connecting" });
+        if (currentGeneration !== generation || manualClose) return;
         let candidate;
         try {
             candidate = new WebSocketImpl(targetUrl);
