@@ -49,6 +49,11 @@ function createPlayerSeat(document, player, position, { dealer, active, action }
     chips.className = "seat-chips";
     chips.textContent = `${Number(player.chips || 0).toLocaleString()} chips`;
 
+    const contribution = document.createElement("span");
+    contribution.className = "seat-contribution";
+    const handContribution = Math.max(0, Number(player.total_bet_this_round) || 0);
+    contribution.textContent = `Hand in ${handContribution.toLocaleString()}`;
+
     const status = document.createElement("span");
     status.className = "seat-state";
     const actionLabel = formatAction(action);
@@ -60,6 +65,7 @@ function createPlayerSeat(document, player, position, { dealer, active, action }
 
     seat.appendChild(heading);
     seat.appendChild(chips);
+    seat.appendChild(contribution);
     seat.appendChild(status);
     return seat;
 }

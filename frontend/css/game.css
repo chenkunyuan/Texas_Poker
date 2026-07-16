@@ -256,6 +256,11 @@ body:has(.game-view:not([hidden])){overflow:hidden}
     color: var(--gold-soft);
 }
 
+.seat-contribution {
+    color: rgba(241, 207, 130, .72);
+    font-size: .92em;
+}
+
 .seat-state {
     margin-top: 2px;
     color: var(--muted);

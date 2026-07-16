@@ -88,7 +88,7 @@ test("renderPlayers marks seat state and shows only the latest action", () => {
     const container = document.createElement("div");
     const state = {
         players: [
-            { id: "human", name: "<b>Alice</b>", is_human: true, is_active: true, chips: 1840 },
+            { id: "human", name: "<b>Alice</b>", is_human: true, is_active: true, chips: 1840, total_bet_this_round: 1250 },
             { id: "bot", name: "Nova", is_active: false, chips: 940 },
         ],
         dealer_index: 0,
@@ -110,6 +110,8 @@ test("renderPlayers marks seat state and shows only the latest action", () => {
     assert.match(container.children[1].className, /is-folded/);
     assert.match(container.children[0].textContent, /<b>Alice<\/b>/);
     assert.match(container.children[0].textContent, /1,840 chips/);
+    assert.equal(findByClass(container.children[0], "seat-contribution").textContent, "Hand in 1,250");
+    assert.equal(findByClass(container.children[1], "seat-contribution").textContent, "Hand in 0");
     assert.match(container.children[0].textContent, /Raise 160/);
     assert.doesNotMatch(container.children[0].textContent, /Check/);
     assert.equal(findByClass(container.children[0], "dealer-marker").textContent, "D");
