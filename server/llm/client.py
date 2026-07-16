@@ -1,10 +1,10 @@
 """
-OpenAI client base classes and factory for Texas Hold'em Poker AI.
+DeepSeek client base classes and factory for Texas Hold'em Poker AI.
 
 Provides:
 - LLMDecision dataclass for structured LLM responses.
 - LLMClient ABC for LLM provider adapters.
-- LLMClientFactory to instantiate the OpenAI adapter from YAML config.
+- LLMClientFactory to instantiate the DeepSeek adapter from YAML config.
 """
 
 from __future__ import annotations
@@ -92,20 +92,11 @@ def _envsubst(value: Optional[str]) -> Optional[str]:
 
 
 class LLMClientFactory:
-    """Create the OpenAI client configured in ``config/llm_config.yaml``."""
+    """Create the DeepSeek client configured in ``config/llm_config.yaml``."""
 
     @staticmethod
     def create(config_path: Optional[str] = None) -> Optional[LLMClient]:
-        """Create an LLM client from a YAML configuration file.
-
-        Args:
-            config_path: Path to the YAML config file.  Defaults to
-                ``<project_root>/config/llm_config.yaml``.
-
-        Returns:
-            An OpenAI :class:`LLMClient`, or ``None`` when configuration is
-            unreadable or ``OPENAI_API_KEY`` is unavailable.
-        """
+        """Create a DeepSeek client, or ``None`` without ``DEEPSEEK_API_KEY``."""
         if config_path is None:
             config_path = str(
                 Path(__file__).resolve().parent.parent.parent
@@ -123,7 +114,7 @@ class LLMClientFactory:
         if not api_key.strip():
             return None
 
-        from server.llm.openai_adapter import OpenAIAdapter
+        from server.llm.deepseek_adapter import DeepSeekAdapter
 
         config["api_key"] = api_key
-        return OpenAIAdapter(config)
+        return DeepSeekAdapter(config)

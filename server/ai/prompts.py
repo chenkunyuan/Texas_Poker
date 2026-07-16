@@ -130,6 +130,14 @@ def build_poker_prompt(
     lines.append("")
     lines.append("Choose the strongest legal action for this situation.")
     lines.append("Keep the reasoning brief and base it only on the information above.")
+    lines.append("Respond with a single JSON object in exactly this shape:")
+    lines.append("{")
+    lines.append('  "action": "FOLD|CHECK|CALL|RAISE|ALL_IN",')
+    lines.append('  "amount": 0,')
+    lines.append('  "reasoning": "brief poker reasoning",')
+    lines.append('  "confidence": 0.0')
+    lines.append("}")
+    lines.append("Use an integer amount and confidence between 0.0 and 1.0.")
 
     return "\n".join(lines)
 
