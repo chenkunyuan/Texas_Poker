@@ -51,7 +51,10 @@ function createPlayerSeat(document, player, position, { dealer, active, action }
 
     const contribution = document.createElement("span");
     contribution.className = "seat-contribution";
-    const handContribution = Math.max(0, Number(player.total_bet_this_round) || 0);
+    const contributionValue = Number(player.total_bet_this_round);
+    const handContribution = Number.isFinite(contributionValue)
+        ? Math.max(0, contributionValue)
+        : 0;
     contribution.textContent = `Hand in ${handContribution.toLocaleString()}`;
 
     const status = document.createElement("span");

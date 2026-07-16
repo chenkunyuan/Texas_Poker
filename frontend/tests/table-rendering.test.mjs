@@ -117,6 +117,23 @@ test("renderPlayers marks seat state and shows only the latest action", () => {
     assert.equal(findByClass(container.children[0], "dealer-marker").textContent, "D");
 });
 
+test("renderPlayers normalizes invalid hand contributions", () => {
+    const document = new FakeDocument();
+    const container = document.createElement("div");
+
+    renderPlayers(container, {
+        players: [
+            { id: "text", name: "Text", chips: 100, total_bet_this_round: "not-a-number" },
+            { id: "infinite", name: "Infinite", chips: 100, total_bet_this_round: Infinity },
+            { id: "negative", name: "Negative", chips: 100, total_bet_this_round: -25 },
+        ],
+    });
+
+    assert.equal(findByClass(container.children[0], "seat-contribution").textContent, "Hand in 0");
+    assert.equal(findByClass(container.children[1], "seat-contribution").textContent, "Hand in 0");
+    assert.equal(findByClass(container.children[2], "seat-contribution").textContent, "Hand in 0");
+});
+
 test("createTableView renders normalized regions and thinking state", () => {
     const document = new FakeDocument();
     const elements = Object.fromEntries([
